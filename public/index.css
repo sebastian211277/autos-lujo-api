@@ -1,0 +1,79 @@
+/* public/styles.css */
+
+body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; margin: 0; padding: 20px; }
+h1, h2 { text-align: center; color: #e74c3c; }
+
+/* Cajas de Formularios y Bienvenida */
+.box { max-width: 400px; margin: 50px auto; background: #1e1e1e; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+
+input { width: 90%; padding: 12px; margin: 10px 0; background: #2c2c2c; border: 1px solid #444; color: white; border-radius: 5px; }
+
+button { width: 100%; padding: 12px; margin-top: 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: background 0.3s; }
+button:hover { background: #c0392b; }
+button.secondary { background: #555; }
+button.secondary:hover { background: #777; }
+
+/* Galería */
+.container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px; }
+.card { background: #1e1e1e; border-radius: 10px; width: 300px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: transform 0.3s; position: relative; }
+.card:hover { transform: translateY(-5px); border: 1px solid #e74c3c; }
+.card img { width: 100%; height: 180px; object-fit: cover; border-radius: 5px; background: #000; }
+.price { color: #2ecc71; font-weight: bold; font-size: 1.4em; margin: 10px 0; }
+
+/* Utilidades */
+.hidden { display: none !important; }
+.navbar { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; margin-bottom: 20px; }
+.user-badge { background: #333; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; }
+
+/* --- FILTROS --- */
+.filters {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    padding: 15px;
+    background: #1e1e1e;
+    border-radius: 10px;
+}
+
+.filters select, .filters input {
+    width: auto;
+    margin: 0;
+    padding: 10px;
+}
+
+/* --- MODAL (Ventana Emergente) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* Fondo oscuro transparente */
+    backdrop-filter: blur(5px); /* Efecto borroso elegante */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #1e1e1e;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 600px;
+    width: 90%;
+    text-align: left;
+    border: 1px solid #e74c3c;
+    position: relative;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #aaa;
+}
+.modal-close:hover { color: white; }
+
+.modal-img { width: 100%; border-radius: 10px; margin-bottom: 20px; }
