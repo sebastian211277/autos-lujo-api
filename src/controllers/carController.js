@@ -1,52 +1,41 @@
-const Car = require('../models/Car');
+// controllers/carController.js
 
-// OBTENER TODOS LOS AUTOS (Público)
+// Obtener autos con paginación
 exports.getCars = async (req, res) => {
-    try {
-        const cars = await Car.find();
-        res.json(cars);
-    } catch (error) {
-        res.status(500).send('Error en el servidor');
-    }
-};
+try {
+    // 1. Recibimos parámetros de la URL (query strings)
+    // Ejemplo: /api/cars?page=1&limit=5
+    const { page = 1, limit = 10 } = req.query;
 
-// CREAR UN AUTO (Privado)
-exports.createCar = async (req, res) => {
-    try {
-        // Crear nuevo auto con los datos que envían
-        const newCar = new Car(req.body);
-        const car = await newCar.save();
-        res.json(car);
-    } catch (error) {
-        res.status(500).send('Error al guardar el auto');
-    }
-};
+    // 2. Convertimos a números enteros
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
 
-// ACTUALIZAR UN AUTO (Privado)
-exports.updateCar = async (req, res) => {
-    try {
-        const { brand, model, price, horsepower } = req.body;
-        let car = await Car.findById(req.params.id);
+    // 3. Calculamos cuántos registros saltar (skip)
+    // Si estoy en pág 1: (1-1)*10 = 0 saltos.
+    // Si estoy en pág 2: (2-1)*10 = 10 saltos (muestro del 11 al 20).
+    const skip = (pageNumber - 1) * limitNumber;
 
-        if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
+    // 4. Ejecutamos la consulta a la BD
+    // .find() busca los autos
+    // .skip() salta los anteriores
+    // .limit() limita cuántos trae
+    const cars = await Car.find()
+    .skip(skip)
+    .limit(limitNumber);
 
-        // Actualizar campos
-        car = await Car.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
-        res.json(car);
-    } catch (error) {
-        res.status(500).send('Error en el servidor');
-    }
-};
+    // 5. Contamos el total de documentos para saber cuántas páginas hay
+    const totalCars = await Car.countDocuments();
 
-// ELIMINAR UN AUTO (Privado)
-exports.deleteCar = async (req, res) => {
-    try {
-        let car = await Car.findById(req.params.id);
-        if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
+    // 6. Enviamos respuesta con metadatos de paginación
+    res.json({
+    total: totalCars,
+    currentPage: pageNumber,
+    totalPages: Math.ceil(totalCars / limitNumber),
+    data: cars
+    });
 
-        await Car.findByIdAndDelete(req.params.id);
-        res.json({ msg: 'Auto eliminado correctamente 🗑️' });
-    } catch (error) {
-        res.status(500).send('Error en el servidor');
-    }
+} catch (error) {
+    res.status(500).json({ message: "Error al obtener autos", error });
+}
 };
