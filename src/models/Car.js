@@ -1,15 +1,40 @@
 const mongoose = require('mongoose');
 
-const CarSchema = new mongoose.Schema({
-    brand: { type: String, required: true },
-    model: { type: String, required: true },
-    year: { type: Number, required: true },
-    price: { type: Number, required: true },
-    horsepower: { type: Number, required: true },
-    imageUrl: { type: String },
-    // 👇 NUEVOS CAMPOS:
-    category: { type: String, default: 'Superauto' }, // Ej: SUV, Sedan, Coupe
-    description: { type: String, default: 'Sin descripción disponible.' }
+const carSchema = new mongoose.Schema({
+    make: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    model: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    year: {
+        type: Number,
+        required: true
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    horsepower: {
+        type: Number,
+        required: true
+    },
+    image: {
+        type: String,
+        required: false
+    },
+    description: {
+        type: String,
+        required: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
-module.exports = mongoose.model('Car', CarSchema);
+module.exports = mongoose.model('Car', carSchema);

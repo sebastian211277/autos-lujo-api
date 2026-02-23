@@ -15,20 +15,21 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // 3. Rutas
+// Ruta de Autenticación
 app.use('/api/auth', require('./routes/authRoutes'));
 
-// Si ya tienes la ruta de autos creada, descomenta la siguiente línea:
-// app.use('/api/cars', require('./routes/carRoutes')); 
+// Ruta de Autos (¡Ya descomentada y funcionando!) 🏎️
+app.use('/api/cars', require('./routes/carRoutes')); 
 
 // Ruta de prueba
 app.get('/', (req, res) => {
-    res.send('¡API de Autos de Lujo funcionando! 🏎️');
+    res.send('¡API de Autos de Lujo funcionando y paginada! 🏎️');
 });
 
-// 4. DEFINIR EL PUERTO (Esto debe ir ANTES del listen)
+// 4. Definir Puerto
 const PORT = process.env.PORT || 10000;
 
-// 5. ENCENDER EL SERVIDOR (Al final de todo)
+// 5. Encender Servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
