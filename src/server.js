@@ -30,3 +30,9 @@ app.listen(PORT, () => {
 app.use('/api/auth', require('./routes/authRoutes'));
 // 👇 AGREGA ESTA LÍNEA NUEVA:
 app.use('/api/cars', require('./routes/carRoutes'));
+
+const PORT = process.env.PORT || 10000;
+
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+});
