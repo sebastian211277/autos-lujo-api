@@ -39,6 +39,23 @@ const carSchema = new mongoose.Schema({
             message: 'No puedes subir más de 10 imágenes por vehículo'
         }
     },
+
+    // ... dentro de carSchema
+    type: { 
+        type: String, 
+        required: [true, 'El tipo de vehículo es obligatorio'],
+        enum: ['Cars', 'Pickups', 'SUV', 'Hybrid & Electric'] // Solo permite estos valores
+    },
+// ...
+
+    // ... dentro de carSchema
+    type: { 
+        type: String, 
+        required: [true, 'El tipo de vehículo es obligatorio'],
+        enum: ['Cars', 'Pickups', 'SUV', 'Hybrid & Electric'] // Solo permite estos valores
+    },
+// ...
+
     description: { 
         type: String, 
         trim: true,

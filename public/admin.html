@@ -3,68 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin - Autos de Lujo</title>
+    <title>Dashboard Admin | Luxury Garage</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f4f4; max-width: 1000px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .form-container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
-        .btn:disabled { background: #ccc !important; cursor: not-allowed; }
-        .btn-success { background: #28a745; }
-        .btn-success:hover { background: #218838; }
-        .btn-logout { background: #343a40; width: auto; }
-        
-        /* Previsualización de fotos */
-        #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 10px; border: 1px dashed #ccc; min-height: 80px; border-radius: 4px; background: #fafafa; }
-        .preview-wrapper { position: relative; animation: fadeIn 0.5s; }
-        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; font-size: 12px; line-height: 20px; }
+        :root {
+            --bg-dark: #121213;
+            --card-bg: #1c1c1e;
+            --gold: #d4af37;
+            --input-bg: #2c2c2e;
+            --text-light: #f5f5f7;
+        }
 
-        .card { background: white; padding: 10px; margin-top: 10px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; }
-        .thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
+        body { 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            padding: 20px; 
+            background: var(--bg-dark); 
+            color: var(--text-light);
+            max-width: 1100px; 
+            margin: 0 auto; 
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+
+        .form-container { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Estilo de Inputs */
+        input, textarea, select { 
+            width: 100%; padding: 12px; margin: 10px 0; 
+            border: 1px solid #444; border-radius: 6px; 
+            background: var(--input-bg); color: white; 
+            box-sizing: border-box; outline: none; transition: 0.3s;
+        }
+        input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+
+        .btn { padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; width: 100%; margin-top: 15px; transition: 0.3s; }
+        .btn-success { background: var(--gold); color: black; }
+        .btn-success:hover { background: #b8972f; transform: translateY(-2px); }
+        .btn-logout { background: transparent; border: 1px solid #ff453a; color: #ff453a; width: auto; padding: 8px 20px; font-size: 0.8rem; }
+        .btn-logout:hover { background: #ff453a; color: white; }
+
+        /* Galería de Previsualización */
+        #preview-container { 
+            display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0; 
+            padding: 20px; border: 1px dashed #555; border-radius: 8px; background: rgba(255,255,255,0.03); 
+        }
+        .preview-wrapper { position: relative; }
+        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #444; }
+        .badge { position: absolute; top: -8px; right: -8px; background: var(--gold); color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; font-size: 12px; line-height: 22px; font-weight: bold; }
+
+        /* Lista de Autos */
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-top: 15px; display: flex; align-items: center; gap: 20px; border: 1px solid #333; }
+        .thumb { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; }
+        .actions { margin-left: auto; display: flex; gap: 10px; }
+        .actions button { background: none; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; cursor: pointer; }
+        .actions .btn-del:hover { border-color: #ff453a; color: #ff453a; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🚗 Gestión de Inventario</h1>
-        <button class="btn btn-logout" onclick="logout()">Salir</button>
+        <h1>Dashboard Luxury</h1>
+        <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
     </div>
 
     <div class="form-container">
-        <h3 id="formTitle">Agregar / Editar Auto</h3>
+        <h3 id="formTitle" style="margin-top:0;">Gestión de Vehículo</h3>
         <form id="carForm">
             <input type="hidden" id="carId">
+            
             <div style="display:flex; gap:10px;">
-                <input type="text" id="make" placeholder="Marca (ej. Ferrari)" required>
-                <input type="text" id="model" placeholder="Modelo (ej. F8)" required>
+                <input type="text" id="make" placeholder="Marca (ej. Porsche)" required>
+                <input type="text" id="model" placeholder="Modelo (ej. 911 Turbo)" required>
             </div>
+
             <div style="display:flex; gap:10px;">
                 <input type="number" id="year" placeholder="Año" required>
                 <input type="number" id="horsepower" placeholder="HP" required>
-                <input type="number" id="price" placeholder="Precio USD" required>
+                <select id="type" required>
+                    <option value="" disabled selected>Tipo de Vehículo</option>
+                    <option value="Cars">Cars</option>
+                    <option value="Pickups">Pickups</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Hybrid & Electric">Hybrid & Electric</option>
+                </select>
             </div>
+            
+            <input type="number" id="price" placeholder="Precio en USD" required>
 
-            <label style="font-weight:bold; margin-top:15px; display:block;">Galería de Fotos:</label>
-            <small style="color:#666;">Selecciona varias fotos. Se comprimirán automáticamente.</small>
+            <label style="font-weight:bold; margin-top:15px; display:block;">Carga de Medios:</label>
             <input type="file" id="imageInput" multiple accept="image/*" onchange="handleFiles()">
             
             <div id="preview-container">
-                <p style="color:#aaa; font-size:0.9rem; margin:auto;">Las fotos aparecerán aquí...</p>
+                <p style="color:#666; font-size:0.9rem; margin:auto;">Sin archivos seleccionados</p>
             </div>
 
-            <textarea id="description" rows="4" placeholder="Descripción detallada del vehículo..."></textarea>
+            <textarea id="description" rows="4" placeholder="Especificaciones y detalles del vehículo..."></textarea>
             
-            <button type="submit" id="submitBtn" class="btn btn-success">Guardar Auto</button>
-            <button type="button" onclick="resetForm()" class="btn" style="background:#6c757d; display:none;" id="cancelBtn">Cancelar</button>
+            <button type="submit" id="submitBtn" class="btn btn-success">Guardar en Inventario</button>
+            <button type="button" onclick="resetForm()" class="btn" style="background:#444; display:none;" id="cancelBtn">Cancelar</button>
         </form>
     </div>
 
-    <div id="carsList" style="margin-top:30px;">
-        <p>Cargando lista...</p>
+    <div id="carsList" style="margin-top:40px; padding-bottom: 50px;">
+        <h4 style="border-bottom: 1px solid #333; padding-bottom: 10px;">Inventario Actual</h4>
     </div>
 
     <script>
@@ -73,8 +114,6 @@
 
         let finalImages = []; 
 
-        // --- FUNCIÓN DE COMPRESIÓN DE IMÁGENES 📉 ---
-        // Esta función toma un archivo grande y devuelve un Base64 pequeño
         const compressImage = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -83,186 +122,127 @@
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = () => {
-                        // Creamos un canvas para redibujar la imagen más pequeña
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // Reducimos a máximo 800px de ancho
+                        const MAX_WIDTH = 1000; 
                         const scaleSize = MAX_WIDTH / img.width;
-                        
-                        // Si la imagen es más pequeña que el límite, no la tocamos
-                        if (scaleSize >= 1) {
-                            resolve(event.target.result); 
-                            return;
-                        }
-
+                        if (scaleSize >= 1) { resolve(event.target.result); return; }
                         canvas.width = MAX_WIDTH;
                         canvas.height = img.height * scaleSize;
-
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                        // Exportamos como JPEG comprimido al 70% de calidad
-                        // Esto reduce una imagen de 5MB a ~100KB (50 veces menos)
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        resolve(compressedDataUrl);
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
                     };
                 };
             });
         };
 
-        // --- PROCESAMIENTO DE ARCHIVOS ---
         async function handleFiles() {
             const input = document.getElementById('imageInput');
             const container = document.getElementById('preview-container');
-            
             if (!input.files.length) return;
-
-            container.innerHTML = '<p style="color:#d4af37;">⏳ Comprimiendo imágenes para la web...</p>';
-            finalImages = [];
-
-            // Usamos Promise.all para comprimir todas las fotos en paralelo
+            container.innerHTML = '<p style="color:var(--gold);">Comprimiendo...</p>';
             const compressPromises = Array.from(input.files).map(file => compressImage(file));
-            
             finalImages = await Promise.all(compressPromises);
-
             renderPreview();
         }
 
         function renderPreview() {
             const container = document.getElementById('preview-container');
-            container.innerHTML = '';
-            
-            if (finalImages.length === 0) {
-                 container.innerHTML = '<p style="color:#aaa;">Las fotos aparecerán aquí...</p>';
-                 return;
-            }
-
+            container.innerHTML = finalImages.length ? '' : '<p style="color:#666;">Sin archivos seleccionados</p>';
             finalImages.forEach((imgSrc, index) => {
-                const div = document.createElement('div');
-                div.className = 'preview-wrapper';
-                div.innerHTML = `
-                    <img src="${imgSrc}" class="preview-img">
-                    <div class="badge">${index + 1}</div>
-                `;
-                container.appendChild(div);
+                container.innerHTML += `<div class="preview-wrapper"><img src="${imgSrc}" class="preview-img"><div class="badge">${index + 1}</div></div>`;
             });
         }
 
-        // --- GUARDAR (POST/PUT) ---
         document.getElementById('carForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerText = "Subiendo...";
+            btn.disabled = true; btn.innerText = "Sincronizando...";
 
             const id = document.getElementById('carId').value;
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? `/api/cars/${id}` : '/api/cars';
-
             const carData = {
                 make: document.getElementById('make').value,
                 model: document.getElementById('model').value,
                 year: document.getElementById('year').value,
                 price: document.getElementById('price').value,
                 horsepower: document.getElementById('horsepower').value,
+                type: document.getElementById('type').value, // <--- CAMBIO CLAVE: Captura el tipo
                 description: document.getElementById('description').value,
                 images: finalImages
             };
 
             try {
-                const res = await fetch(url, {
-                    method: method,
+                const res = await fetch(id ? `/api/cars/${id}` : '/api/cars', {
+                    method: id ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify(carData)
                 });
-
                 if (res.ok) {
-                    Swal.fire({
-                        title: '¡Excelente!',
-                        text: 'Auto guardado correctamente',
-                        icon: 'success',
-                        confirmButtonColor: '#28a745'
-                    });
-                    resetForm();
-                    loadCars();
+                    Swal.fire('Éxito', 'Base de datos actualizada', 'success');
+                    resetForm(); loadCars();
                 } else {
-                    const errData = await res.json();
-                    Swal.fire('Error', errData.message || 'Error al guardar', 'error');
+                    const err = await res.json();
+                    Swal.fire('Error', err.message, 'error');
                 }
-            } catch (error) {
-                console.error(error);
-                Swal.fire('Error', 'La imagen sigue siendo muy pesada o falló la conexión', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Guardar Auto";
-            }
+            } catch (error) { Swal.fire('Error', 'Falla de red', 'error'); }
+            finally { btn.disabled = false; btn.innerText = "Guardar en Inventario"; }
         });
 
-        // --- CARGAR LISTA ---
         async function loadCars() {
-            const res = await fetch('/api/cars');
-            const data = await res.json();
+            const res = await fetch('/api/cars?limit=100');
+            const response = await res.json();
             const list = document.getElementById('carsList');
-            list.innerHTML = '';
-            
-            data.data.forEach(car => {
+            list.innerHTML = '<h4 style="border-bottom: 1px solid #333; padding-bottom: 10px;">Inventario Actual</h4>';
+            response.data.forEach(car => {
                 const carStr = JSON.stringify(car).replace(/'/g, "&#39;");
-                const thumb = (car.images && car.images.length) ? car.images[0] : '';
-                
                 list.innerHTML += `
                     <div class="card">
-                        <img src="${thumb}" class="thumb">
-                        <div style="flex-grow:1"><b>${car.make} ${car.model}</b></div>
-                        <button onclick='editCar(${carStr})' style="margin-right:5px; cursor:pointer;">✏️</button>
-                        <button onclick="deleteCar('${car._id}')" style="background:red; color:white; border:none; padding:5px; cursor:pointer;">🗑️</button>
+                        <img src="${car.images[0] || ''}" class="thumb">
+                        <div>
+                            <b>${car.make} ${car.model}</b><br>
+                            <small style="color:var(--gold)">${car.type} | ${car.year}</small>
+                        </div>
+                        <div class="actions">
+                            <button onclick='editCar(${carStr})'>✏️</button>
+                            <button class="btn-del" onclick="deleteCar('${car._id}')">🗑️</button>
+                        </div>
                     </div>
                 `;
             });
         }
 
         function editCar(car) {
-            document.getElementById('formTitle').innerText = "Editando Auto: " + car.model;
+            document.getElementById('formTitle').innerText = "Editando " + car.model;
             document.getElementById('carId').value = car._id;
             document.getElementById('make').value = car.make;
             document.getElementById('model').value = car.model;
             document.getElementById('year').value = car.year;
             document.getElementById('horsepower').value = car.horsepower;
             document.getElementById('price').value = car.price;
+            document.getElementById('type').value = car.type; // <--- Carga el tipo al editar
             document.getElementById('description').value = car.description || '';
-            
             finalImages = car.images || [];
             renderPreview();
-
-            document.getElementById('submitBtn').innerText = "Actualizar Auto";
-            document.getElementById('cancelBtn').style.display = "inline-block";
-            window.scrollTo(0,0);
+            document.getElementById('btnSave'); 
+            document.getElementById('cancelBtn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function deleteCar(id) {
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "No podrás revertir esto",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, borrar'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: {'x-auth-token':token} });
-                    loadCars();
-                    Swal.fire('Borrado', 'El auto ha sido eliminado.', 'success');
-                }
-            })
+            const res = await Swal.fire({ title: '¿Eliminar?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff453a' });
+            if (res.isConfirmed) {
+                await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: {'x-auth-token':token} });
+                loadCars();
+            }
         }
 
         function resetForm() {
             document.getElementById('carForm').reset();
-            document.getElementById('formTitle').innerText = "Agregar / Editar Auto";
             document.getElementById('carId').value = '';
             finalImages = [];
-            document.getElementById('preview-container').innerHTML = '<p style="color:#aaa;">Las fotos aparecerán aquí...</p>';
-            document.getElementById('submitBtn').innerText = "Guardar Auto";
+            renderPreview();
             document.getElementById('cancelBtn').style.display = "none";
+            document.getElementById('formTitle').innerText = "Gestión de Vehículo";
         }
 
         function logout() { localStorage.removeItem('token'); window.location.href='/login.html'; }

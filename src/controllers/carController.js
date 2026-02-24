@@ -1,21 +1,39 @@
 const Car = require('../models/Car');
 const axios = require('axios');
 
-// 1. OBTENER AUTOS (GET) - Con precio en MXN y paginación
+// 1. OBTENER AUTOS (GET) - Ahora con FILTROS, MXN y Paginación
 exports.getCars = async (req, res) => {
     try {
+        // Extraemos filtros de la URL (Query Params)
+        const { type, make } = req.query;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const cars = await Car.find()
+        // Construimos el objeto de búsqueda dinámico
+        let query = {};
+        
+        // Si el usuario filtró por Categoría (Cars, SUV, etc.)
+        if (type) {
+            query.type = type;
+        }
+
+        // Si el usuario filtró por Marca (Porsche, Ferrari, etc.)
+        // Usamos regex para que sea flexible (no importa mayúsculas/minúsculas)
+        if (make) {
+            query.make = { $regex: make, $options: 'i' };
+        }
+
+        // Ejecutamos la búsqueda con el filtro aplicado
+        const cars = await Car.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await Car.countDocuments();
+        // Importante: Contar documentos basándonos en el filtro para que la paginación no mienta
+        const total = await Car.countDocuments(query);
 
-        // Obtener tipo de cambio
+        // Obtener tipo de cambio dinámico
         let exchangeRate = 20;
         try {
             const response = await axios.get('https://api.frankfurter.app/latest?from=USD&to=MXN');
@@ -39,14 +57,19 @@ exports.getCars = async (req, res) => {
             data: carsWithMXN
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al obtener autos', error: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al obtener autos', 
+            error: error.message 
+        });
     }
 };
 
-// 2. CREAR AUTO (POST) - Con soporte para imágenes múltiples
+// 2. CREAR AUTO (POST) - Ahora incluye el campo "type"
 exports.createCar = async (req, res) => {
     try {
-        const { make, model, year, price, horsepower, description, images } = req.body;
+        // Agregamos "type" a la desestructuración del cuerpo
+        const { make, model, year, price, horsepower, type, description, images } = req.body;
 
         let processedImages = [];
         if (typeof images === 'string') {
@@ -56,13 +79,23 @@ exports.createCar = async (req, res) => {
         }
 
         const newCar = await Car.create({
-            make, model, year, price, horsepower, description,
+            make, 
+            model, 
+            year, 
+            price, 
+            horsepower, 
+            type, // Guardamos la categoría (Cars, SUV, etc.)
+            description,
             images: processedImages
         });
 
         res.status(201).json({ success: true, data: newCar });
     } catch (error) {
-        res.status(400).json({ success: false, message: 'Error al crear auto', error: error.message });
+        res.status(400).json({ 
+            success: false, 
+            message: 'Error al crear auto', 
+            error: error.message 
+        });
     }
 };
 
@@ -71,7 +104,6 @@ exports.updateCar = async (req, res) => {
     try {
         let dataToUpdate = req.body;
 
-        // Si envían imágenes nuevas, las procesamos
         if (dataToUpdate.images) {
             let processedImages = [];
             if (typeof dataToUpdate.images === 'string') {
@@ -93,7 +125,11 @@ exports.updateCar = async (req, res) => {
 
         res.status(200).json({ success: true, data: updatedCar });
     } catch (error) {
-        res.status(400).json({ success: false, message: 'Error al actualizar', error: error.message });
+        res.status(400).json({ 
+            success: false, 
+            message: 'Error al actualizar', 
+            error: error.message 
+        });
     }
 };
 
@@ -106,6 +142,10 @@ exports.deleteCar = async (req, res) => {
         }
         res.status(200).json({ success: true, message: 'Auto eliminado correctamente' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Error al eliminar', error: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error al eliminar', 
+            error: error.message 
+        });
     }
 };
