@@ -38,10 +38,20 @@
         .page-btn:disabled { border-color: #333; color: #555; cursor: not-allowed; }
         #pageInfo { font-size: 0.9rem; letter-spacing: 1px; color: #888; }
 
-        /* Modal (Mantenemos el estilo anterior) */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
-        .modal-content { background: #151515; width: 90%; max-width: 900px; border-radius: 8px; overflow: hidden; display: flex; }
-        @media (max-width: 768px) { .modal-content { flex-direction: column; } .header-container { flex-direction: column; text-align: center; } }
+        /* MODAL DE DETALLE (FICHA TÉCNICA) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; }
+        .modal-content { 
+            background: #151515; width: 90%; max-width: 1000px; height: 80vh; 
+            display: grid; grid-template-columns: 1.5fr 1fr; border-radius: 8px; overflow: hidden; position: relative;
+        }
+        .modal-gallery { position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+        .modal-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .modal-details { padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .detail-title { font-size: 2rem; color: #d4af37; margin: 0; }
+        .detail-price { font-size: 1.5rem; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 35px; color: #fff; cursor: pointer; z-index: 1001; }
+        
+        @media (max-width: 768px) { .modal-content { grid-template-columns: 1fr; height: 90vh; } }
     </style>
 </head>
 <body>
@@ -52,7 +62,7 @@
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" placeholder="Buscar..." onkeyup="handleSearch()">
             </div>
-            <a href="/login.html" style="color:#555; text-decoration:none; font-size:0.8rem;">Admin</a>
+            <a href="/login.html" style="color:#555; text-decoration:none; font-size:0.8rem;">Admin Access</a>
         </div>
     </header>
 
@@ -66,17 +76,38 @@
         </div>
     </div>
 
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-gallery">
+                <img id="modalImg" class="modal-img" src="">
+            </div>
+            <div class="modal-details">
+                <h2 id="mTitle" class="detail-title">Cargando...</h2>
+                <div class="detail-price">
+                    <div id="mPriceUSD">USD $0</div>
+                    <small id="mPriceMXN" style="color:#888;">MXN $0</small>
+                </div>
+                <p>📅 <b>Año:</b> <span id="mYear"></span></p>
+                <p>🐎 <b>Potencia:</b> <span id="mHP"></span> HP</p>
+                <div>
+                    <h3>Descripción</h3>
+                    <p id="mDesc" style="line-height:1.6; color:#ccc;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentPage = 1;
         let totalPages = 1;
-        const limit = 6; // Mostraremos 6 autos por página
+        const limit = 6;
 
         async function loadCars(page = 1) {
             const grid = document.getElementById('grid');
-            grid.innerHTML = '<p style="text-align:center; width:100%;">Cargando...</p>';
+            grid.innerHTML = '<p style="text-align:center; width:100%;">Conectando con el inventario...</p>';
 
             try {
-                // Llamamos a la API con los parámetros de paginación
                 const res = await fetch(`/api/cars?page=${page}&limit=${limit}`);
                 const response = await res.json();
                 
@@ -87,7 +118,7 @@
                     updatePaginationUI();
                 }
             } catch (error) {
-                grid.innerHTML = '<p style="color:red;">Error al cargar datos.</p>';
+                grid.innerHTML = '<p style="color:red;">Error de conexión.</p>';
             }
         }
 
@@ -95,15 +126,13 @@
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
             
-            if (cars.length === 0) {
-                grid.innerHTML = '<p style="text-align:center; width:100%;">No hay autos disponibles.</p>';
-                return;
-            }
-
             cars.forEach(car => {
-                const cover = (car.images && car.images.length) ? car.images[0] : '';
+                const carJson = JSON.stringify(car).replace(/'/g, "&#39;");
+                const cover = (car.images && car.images.length) ? car.images[0] : 'https://via.placeholder.com/400';
+                
+                // AQUÍ ESTABA EL ERROR: Agregamos el onclick="openModal(...)"
                 grid.innerHTML += `
-                    <div class="card">
+                    <div class="card" onclick='openModal(${carJson})'>
                         <img src="${cover}">
                         <div class="card-info">
                             <h3 class="card-title">${car.make} ${car.model}</h3>
@@ -114,10 +143,28 @@
             });
         }
 
+        function openModal(car) {
+            // Llenamos los datos en el modal
+            document.getElementById('mTitle').innerText = `${car.make} ${car.model}`;
+            document.getElementById('mPriceUSD').innerText = `USD $${car.price.toLocaleString()}`;
+            document.getElementById('mPriceMXN').innerText = `MXN $${(car.priceMXN || 0).toLocaleString()}`;
+            document.getElementById('mYear').innerText = car.year;
+            document.getElementById('mHP').innerText = car.horsepower;
+            document.getElementById('mDesc').innerText = car.description || "Sin descripción disponible.";
+            document.getElementById('modalImg').src = (car.images && car.images.length) ? car.images[0] : '';
+
+            // Mostramos el modal
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
         function updatePaginationUI() {
             document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
             document.getElementById('prevBtn').disabled = (currentPage === 1);
-            document.getElementById('nextBtn').disabled = (currentPage === totalPages);
+            document.getElementById('nextBtn').disabled = (currentPage === totalPages || totalPages === 0);
         }
 
         function changePage(step) {
@@ -128,16 +175,10 @@
             }
         }
 
-        // Búsqueda (Nota: Para un buscador pro con paginación, 
-        // normalmente filtrarías en el backend, pero aquí mantendremos la sencillez)
         function handleSearch() {
             const term = document.getElementById('searchInput').value.toLowerCase();
-            if (term === "") {
-                loadCars(1); // Si borra la búsqueda, vuelve a la paginación normal
-                return;
-            }
-            // Si hay término, cargamos todos y filtramos localmente 
-            // (Para un proyecto real, el backend debería filtrar)
+            if (term === "") { loadCars(1); return; }
+
             fetch('/api/cars?limit=100').then(res => res.json()).then(response => {
                 const filtered = response.data.filter(c => 
                     c.make.toLowerCase().includes(term) || c.model.toLowerCase().includes(term)
@@ -148,6 +189,12 @@
                 document.getElementById('pageInfo').innerText = "Resultados de búsqueda";
             });
         }
+
+        // Cerrar modal si hacen clic fuera o presionan Escape
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('detailModal')) closeModal();
+        }
+        window.onkeydown = function(e) { if(e.key === "Escape") closeModal(); }
 
         loadCars(1);
     </script>
