@@ -44,8 +44,11 @@
                 const result = await res.json();
 
                 if (res.ok) {
-                    alert('¡Admin Creado! Ahora ve al login.');
-                    window.location.href = '/login.html'; // Te manda al login automáticamente
+                    alert('¡Bienvenido Jefe! Entrando al sistema...');
+                    // Guardamos la llave maestra (Token) que nos dio el registro
+                    localStorage.setItem('token', result.token); 
+                    // Nos saltamos el login y vamos directo a la cocina
+                    window.location.href = '/admin.html'; 
                 } else {
                     alert('Error: ' + result.msg);
                 }
