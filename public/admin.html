@@ -5,90 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f4f4; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .form-container { background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
-        /* Estilo para el input de archivos */
-        input[type="file"] { padding: 10px; background: #f8f9fa; border: 1px dashed #ccc; cursor: pointer; }
+        /* Formulario */
+        .form-container { background: white; padding: 25px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid #28a745; transition: 0.3s; }
+        .form-container.editing { border-left-color: #ffc107; background: #fffbe6; } /* Color amarillo al editar */
         
-        button { background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 1rem; width: 100%; margin-top: 10px; }
-        button:hover { background: #218838; }
-        .btn-logout { background: #dc3545; width: auto; margin: 0; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Botones */
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
+        .btn-success { background: #28a745; width: 100%; margin-top: 10px; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: black; width: 100%; margin-top: 10px; display: none; } /* Oculto por defecto */
+        .btn-cancel { background: #6c757d; margin-top: 10px; width: 100%; display: none; }
+        .btn-danger { background: #dc3545; font-size: 0.8rem; }
+        .btn-edit { background: #007bff; font-size: 0.8rem; margin-right: 5px; }
+        .btn-logout { background: #343a40; }
 
-        /* Previsualización de fotos */
+        /* Lista de Autos */
+        .cars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; }
+        .thumb { width: 100px; height: 70px; object-fit: cover; border-radius: 4px; background: #eee; }
+        .actions { margin-left: auto; display: flex; flex-direction: column; gap: 5px; }
+        
+        /* Previsualización */
         #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
-
-        /* Lista de autos */
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; background: #eee; }
+        .preview-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🚗 Gestión de Inventario</h1>
-        <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+        <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
     </div>
 
-    <div class="form-container">
-        <h3>Agregar Nuevo Auto</h3>
+    <div class="form-container" id="formContainer">
+        <h3 id="formTitle">Agregar Nuevo Auto</h3>
         <form id="carForm">
-            <input type="text" id="make" placeholder="Marca (ej. Porsche)" required>
-            <input type="text" id="model" placeholder="Modelo (ej. 911 GT3)" required>
+            <input type="hidden" id="carId"> <div style="display:flex; gap:10px;">
+                <input type="text" id="make" placeholder="Marca (ej. Ferrari)" required>
+                <input type="text" id="model" placeholder="Modelo (ej. F8 Tributo)" required>
+            </div>
             <div style="display:flex; gap:10px;">
                 <input type="number" id="year" placeholder="Año" required>
                 <input type="number" id="horsepower" placeholder="HP" required>
+                <input type="number" id="price" placeholder="Precio USD" required>
             </div>
-            <input type="number" id="price" placeholder="Precio en USD" required>
-            
-            <label style="font-weight:bold; display:block; margin-top:10px;">Subir Fotos (Máx 5):</label>
-            <input type="file" id="imageInput" multiple accept="image/*" onchange="previewImages()">
+
+            <label style="font-weight:bold; display:block; margin-top:10px;">Fotos:</label>
+            <input type="file" id="imageInput" multiple accept="image/*" onchange="previewFiles()">
             <div id="preview-container"></div>
-            
+            <p style="font-size:0.8rem; color:#666;" id="imgHelpText">Selecciona nuevas fotos para reemplazarlas todas.</p>
+
             <textarea id="description" rows="3" placeholder="Descripción del vehículo"></textarea>
             
-            <button type="submit" id="submitBtn">Guardar Auto</button>
+            <button type="submit" id="btnSave" class="btn btn-success">Guardar Auto Nuevo</button>
+            <button type="button" id="btnUpdate" class="btn btn-warning" onclick="submitUpdate()">Actualizar Auto</button>
+            <button type="button" id="btnCancel" class="btn btn-cancel" onclick="resetForm()">Cancelar Edición</button>
         </form>
     </div>
 
-    <div id="carsList"><p>Cargando autos...</p></div>
+    <div id="carsList" class="cars-grid">
+        <p>Cargando inventario...</p>
+    </div>
 
     <script>
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/login.html';
 
-        let base64Images = []; // Aquí guardaremos las fotos convertidas
+        let base64Images = []; 
 
-        // Función para leer los archivos y convertirlos a Base64
-        function previewImages() {
+        // --- FUNCIONES DE IMÁGENES ---
+        function previewFiles() {
             const input = document.getElementById('imageInput');
             const container = document.getElementById('preview-container');
-            container.innerHTML = ''; // Limpiar previos
-            base64Images = []; // Reiniciar array
+            container.innerHTML = ''; 
+            base64Images = []; 
 
             if (input.files) {
-                // Limitamos a 5 fotos
-                const files = Array.from(input.files).slice(0, 5);
-
-                files.forEach(file => {
+                Array.from(input.files).slice(0, 5).forEach(file => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        // Guardamos el string base64
                         base64Images.push(e.target.result);
-                        
-                        // Creamos la miniatura visual
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'preview-img';
-                        container.appendChild(img);
+                        container.innerHTML += `<img src="${e.target.result}" class="preview-img">`;
                     };
-                    reader.readAsDataURL(file); // ¡Aquí ocurre la magia!
+                    reader.readAsDataURL(file);
                 });
             }
         }
 
+        // --- CARGAR AUTOS ---
         async function loadCars() {
             try {
                 const res = await fetch('/api/cars');
@@ -97,67 +105,134 @@
                 list.innerHTML = '';
 
                 data.data.forEach(car => {
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    // Usamos la primera foto o un placeholder
-                    const thumbSrc = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/100?text=No+Foto';
-                    
-                    div.innerHTML = `
-                        <img src="${thumbSrc}" class="thumb" alt="auto">
-                        <div>
-                            <h3 style="margin:0;">${car.make} ${car.model}</h3>
-                            <small>USD $${car.price.toLocaleString()}</small>
+                    const thumb = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/100';
+                    // Convertimos el objeto car a string para pasarlo a la función de editar
+                    // (Escapamos las comillas simples para que no rompa el HTML)
+                    const carString = JSON.stringify(car).replace(/'/g, "&#39;");
+
+                    list.innerHTML += `
+                        <div class="card">
+                            <img src="${thumb}" class="thumb">
+                            <div style="flex-grow:1;">
+                                <strong>${car.make} ${car.model}</strong><br>
+                                <small>${car.year} | $${car.price.toLocaleString()}</small>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-edit" onclick='startEdit(${carString})'>✏️</button>
+                                <button class="btn btn-danger" onclick="deleteCar('${car._id}')">🗑️</button>
+                            </div>
                         </div>
                     `;
-                    list.appendChild(div);
                 });
             } catch (error) { console.error(error); }
         }
 
+        // --- MODO EDICIÓN ---
+        function startEdit(car) {
+            // 1. Cambiar interfaz visual
+            document.getElementById('formTitle').innerText = `Editando: ${car.make} ${car.model}`;
+            document.getElementById('formContainer').classList.add('editing');
+            
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnUpdate').style.display = 'block';
+            document.getElementById('btnCancel').style.display = 'block';
+
+            // 2. Llenar datos
+            document.getElementById('carId').value = car._id;
+            document.getElementById('make').value = car.make;
+            document.getElementById('model').value = car.model;
+            document.getElementById('year').value = car.year;
+            document.getElementById('horsepower').value = car.horsepower;
+            document.getElementById('price').value = car.price;
+            document.getElementById('description').value = car.description || '';
+
+            // 3. Mostrar imágenes actuales
+            const container = document.getElementById('preview-container');
+            container.innerHTML = '';
+            base64Images = car.images || []; // Mantener las imágenes actuales por si no sube nuevas
+            
+            if(car.images) {
+                car.images.forEach(imgUrl => {
+                    container.innerHTML += `<img src="${imgUrl}" class="preview-img">`;
+                });
+            }
+            
+            // Scroll hacia arriba para ver el formulario
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('carForm').reset();
+            document.getElementById('formTitle').innerText = 'Agregar Nuevo Auto';
+            document.getElementById('formContainer').classList.remove('editing');
+            document.getElementById('preview-container').innerHTML = '';
+            base64Images = [];
+
+            document.getElementById('btnSave').style.display = 'block';
+            document.getElementById('btnUpdate').style.display = 'none';
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+
+        // --- GUARDAR NUEVO (POST) ---
         document.getElementById('carForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.innerText = "Subiendo fotos...";
-            btn.disabled = true;
+            const carData = getFormData();
+            
+            try {
+                const res = await fetch('/api/cars', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify(carData)
+                });
+                if(res.ok) { alert('Creado!'); resetForm(); loadCars(); }
+            } catch (err) { alert('Error al crear'); }
+        });
 
-            const newCar = {
+        // --- ACTUALIZAR EXISTENTE (PUT) ---
+        async function submitUpdate() {
+            const id = document.getElementById('carId').value;
+            const carData = getFormData();
+
+            try {
+                const res = await fetch(`/api/cars/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+                    body: JSON.stringify(carData)
+                });
+                if(res.ok) { alert('Actualizado!'); resetForm(); loadCars(); }
+                else { alert('Error al actualizar'); }
+            } catch (err) { alert('Error de conexión'); }
+        }
+
+        // --- ELIMINAR (DELETE) ---
+        async function deleteCar(id) {
+            if(!confirm('¿Seguro que quieres eliminar este auto?')) return;
+            
+            try {
+                const res = await fetch(`/api/cars/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-auth-token': token }
+                });
+                if(res.ok) { loadCars(); }
+                else { alert('Error al eliminar'); }
+            } catch (err) { console.error(err); }
+        }
+
+        function getFormData() {
+            return {
                 make: document.getElementById('make').value,
                 model: document.getElementById('model').value,
                 year: document.getElementById('year').value,
                 price: document.getElementById('price').value,
                 horsepower: document.getElementById('horsepower').value,
                 description: document.getElementById('description').value,
-                images: base64Images // Enviamos las fotos convertidas
+                images: base64Images
             };
-
-            try {
-                const res = await fetch('/api/cars', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                    body: JSON.stringify(newCar)
-                });
-                
-                if (res.ok) { 
-                    alert('¡Auto subido con éxito!'); 
-                    loadCars(); 
-                    e.target.reset(); 
-                    document.getElementById('preview-container').innerHTML = '';
-                    base64Images = [];
-                } else { 
-                    const err = await res.json();
-                    alert('Error: ' + err.message); 
-                }
-            } catch (error) { 
-                console.error(error); 
-                alert('Error de conexión o imagen muy pesada');
-            } finally {
-                btn.innerText = "Guardar Auto";
-                btn.disabled = false;
-            }
-        });
+        }
 
         function logout() { localStorage.removeItem('token'); window.location.href = '/login.html'; }
-        loadCars();
+        
+        loadCars(); // Iniciar
     </script>
 </body>
 </html>
