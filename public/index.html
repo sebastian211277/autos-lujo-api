@@ -3,50 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autos Luxury - Catálogo Exclusivo</title>
+    <title>Autos Luxury - Catálogo Maestro</title>
     <style>
         body { font-family: 'Helvetica Neue', sans-serif; background-color: #0a0a0a; color: #fff; margin: 0; }
         
-        /* Header & Search */
+        /* Header */
         header { padding: 20px 40px; border-bottom: 1px solid #333; background: #000; position: sticky; top: 0; z-index: 100; }
-        .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
         h1 { color: #d4af37; text-transform: uppercase; letter-spacing: 2px; font-size: 1.5rem; margin: 0; }
         
-        .search-container { flex-grow: 1; max-width: 500px; position: relative; }
+        .search-container { flex-grow: 1; max-width: 400px; }
         .search-input { 
-            width: 100%; padding: 12px 20px; background: #1a1a1a; border: 1px solid #333; 
-            border-radius: 25px; color: white; font-size: 0.9rem; outline: none; transition: 0.3s;
+            width: 100%; padding: 10px 20px; background: #1a1a1a; border: 1px solid #333; 
+            border-radius: 25px; color: white; outline: none; transition: 0.3s;
         }
-        .search-input:focus { border-color: #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
-
-        /* Loader */
-        #loader { display: none; text-align: center; padding: 50px; }
-        .spinner { 
-            width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #d4af37; 
-            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .search-input:focus { border-color: #d4af37; }
 
         /* Grid & Cards */
         .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; min-height: 60vh; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
-        .card { background: #1a1a1a; border-radius: 8px; overflow: hidden; transition: 0.3s; cursor: pointer; border: 1px solid #333; animation: fadeIn 0.5s; }
+        .card { background: #1a1a1a; border-radius: 8px; overflow: hidden; transition: 0.3s; cursor: pointer; border: 1px solid #333; }
         .card:hover { transform: translateY(-5px); border-color: #d4af37; }
         .card img { width: 100%; height: 220px; object-fit: cover; }
         .card-info { padding: 15px; }
-        .card-title { margin: 0; font-size: 1.2rem; }
-        .card-price { color: #d4af37; font-weight: bold; margin-top: 8px; font-size: 1.1rem; }
-        
-        /* Modal Detalle (El que ya teníamos) */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; }
-        .modal-content { background: #151515; width: 90%; max-width: 1000px; height: 80vh; display: grid; grid-template-columns: 1.5fr 1fr; border-radius: 8px; overflow: hidden; position: relative; }
-        .modal-gallery { position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
-        .modal-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .modal-details { padding: 40px; overflow-y: auto; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 30px; color: #fff; cursor: pointer; z-index: 1001; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @media (max-width: 768px) { .modal-content { grid-template-columns: 1fr; height: 90vh; } .search-container { order: 3; max-width: 100%; } }
+        .card-price { color: #d4af37; font-weight: bold; margin-top: 5px; }
+
+        /* PAGINACIÓN */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 50px 0; }
+        .page-btn { 
+            background: #1a1a1a; color: #d4af37; border: 1px solid #d4af37; padding: 10px 25px; 
+            border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        .page-btn:hover:not(:disabled) { background: #d4af37; color: black; }
+        .page-btn:disabled { border-color: #333; color: #555; cursor: not-allowed; }
+        #pageInfo { font-size: 0.9rem; letter-spacing: 1px; color: #888; }
+
+        /* Modal (Mantenemos el estilo anterior) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content { background: #151515; width: 90%; max-width: 900px; border-radius: 8px; overflow: hidden; display: flex; }
+        @media (max-width: 768px) { .modal-content { flex-direction: column; } .header-container { flex-direction: column; text-align: center; } }
     </style>
 </head>
 <body>
@@ -54,127 +49,107 @@
     <header>
         <div class="header-container">
             <h1>Autos Luxury</h1>
-            
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por marca o modelo (ej. Porsche, Ferrari)..." onkeyup="filterCars()">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar..." onkeyup="handleSearch()">
             </div>
-            
-            <a href="/login.html" style="color:#555; text-decoration:none; font-size:0.8rem;">Admin Access</a>
+            <a href="/login.html" style="color:#555; text-decoration:none; font-size:0.8rem;">Admin</a>
         </div>
     </header>
 
     <div class="container">
-        <div id="loader">
-            <div class="spinner"></div>
-            <p style="color:#d4af37; margin-top:15px; letter-spacing:1px;">CONECTANDO CON EL INVENTARIO...</p>
-        </div>
-
-        <div id="noResults" style="display:none; text-align:center; padding:50px; color:#888;">
-            <span style="font-size:3rem;">🔎</span>
-            <p>No encontramos autos que coincidan con tu búsqueda.</p>
-        </div>
-
         <div id="grid" class="grid"></div>
-    </div>
-
-    <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <div class="modal-gallery">
-                <img id="modalImg" class="modal-img" src="">
-            </div>
-            <div class="modal-details">
-                <h2 id="mTitle" style="color:#d4af37;"></h2>
-                <h3 id="mPrice" style="margin-bottom:20px;"></h3>
-                <p id="mDesc" style="line-height:1.6; color:#ccc;"></p>
-                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-                <p><strong>Año:</strong> <span id="mYear"></span></p>
-                <p><strong>Potencia:</strong> <span id="mHP"></span> HP</p>
-            </div>
+        
+        <div class="pagination">
+            <button id="prevBtn" class="page-btn" onclick="changePage(-1)">Anterior</button>
+            <span id="pageInfo">Página 1 de 1</span>
+            <button id="nextBtn" class="page-btn" onclick="changePage(1)">Siguiente</button>
         </div>
     </div>
 
     <script>
-        let allCars = []; // Guardaremos aquí todos los autos para filtrar sin llamar a la API
-        let currentImages = [];
-        
-        // Cargar autos al inicio
-        async function loadCars() {
+        let currentPage = 1;
+        let totalPages = 1;
+        const limit = 6; // Mostraremos 6 autos por página
+
+        async function loadCars(page = 1) {
             const grid = document.getElementById('grid');
-            const loader = document.getElementById('loader');
-            
-            grid.innerHTML = '';
-            loader.style.display = 'block';
+            grid.innerHTML = '<p style="text-align:center; width:100%;">Cargando...</p>';
 
             try {
-                const res = await fetch('/api/cars');
+                // Llamamos a la API con los parámetros de paginación
+                const res = await fetch(`/api/cars?page=${page}&limit=${limit}`);
                 const response = await res.json();
                 
-                allCars = response.data; // Guardamos los datos localmente
-                renderCars(allCars); // Mostramos todos por primera vez
-
+                if (response.success) {
+                    renderCars(response.data);
+                    currentPage = response.currentPage;
+                    totalPages = response.totalPages;
+                    updatePaginationUI();
+                }
             } catch (error) {
-                grid.innerHTML = '<p style="color:red; text-align:center;">Error al conectar con el servidor.</p>';
-            } finally {
-                loader.style.display = 'none';
+                grid.innerHTML = '<p style="color:red;">Error al cargar datos.</p>';
             }
         }
 
-        // Función para dibujar las tarjetas en pantalla
         function renderCars(cars) {
             const grid = document.getElementById('grid');
-            const noResults = document.getElementById('noResults');
             grid.innerHTML = '';
-
+            
             if (cars.length === 0) {
-                noResults.style.display = 'block';
+                grid.innerHTML = '<p style="text-align:center; width:100%;">No hay autos disponibles.</p>';
                 return;
             }
 
-            noResults.style.display = 'none';
             cars.forEach(car => {
-                const carJson = JSON.stringify(car).replace(/'/g, "&#39;");
-                const cover = (car.images && car.images.length) ? car.images[0] : 'https://via.placeholder.com/400x220?text=Luxury+Car';
-                
+                const cover = (car.images && car.images.length) ? car.images[0] : '';
                 grid.innerHTML += `
-                    <div class="card" onclick='openModal(${carJson})'>
-                        <img src="${cover}" alt="${car.make}">
+                    <div class="card">
+                        <img src="${cover}">
                         <div class="card-info">
                             <h3 class="card-title">${car.make} ${car.model}</h3>
                             <div class="card-price">US $${car.price.toLocaleString()}</div>
-                            <small style="color:#888;">MXN $${(car.priceMXN || 0).toLocaleString()}</small>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // LÓGICA DEL BUSCADOR (FILTRADO EN TIEMPO REAL)
-        function filterCars() {
+        function updatePaginationUI() {
+            document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage === totalPages);
+        }
+
+        function changePage(step) {
+            const newPage = currentPage + step;
+            if (newPage >= 1 && newPage <= totalPages) {
+                loadCars(newPage);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Búsqueda (Nota: Para un buscador pro con paginación, 
+        // normalmente filtrarías en el backend, pero aquí mantendremos la sencillez)
+        function handleSearch() {
             const term = document.getElementById('searchInput').value.toLowerCase();
-            
-            // Filtramos el array local
-            const filtered = allCars.filter(car => {
-                return car.make.toLowerCase().includes(term) || 
-                       car.model.toLowerCase().includes(term);
+            if (term === "") {
+                loadCars(1); // Si borra la búsqueda, vuelve a la paginación normal
+                return;
+            }
+            // Si hay término, cargamos todos y filtramos localmente 
+            // (Para un proyecto real, el backend debería filtrar)
+            fetch('/api/cars?limit=100').then(res => res.json()).then(response => {
+                const filtered = response.data.filter(c => 
+                    c.make.toLowerCase().includes(term) || c.model.toLowerCase().includes(term)
+                );
+                renderCars(filtered);
+                document.getElementById('prevBtn').disabled = true;
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('pageInfo').innerText = "Resultados de búsqueda";
             });
-
-            renderCars(filtered);
         }
 
-        function openModal(car) {
-            document.getElementById('mTitle').innerText = `${car.make} ${car.model}`;
-            document.getElementById('mPrice').innerText = `US $${car.price.toLocaleString()}`;
-            document.getElementById('mDesc').innerText = car.description || 'Sin descripción.';
-            document.getElementById('mYear').innerText = car.year;
-            document.getElementById('mHP').innerText = car.horsepower;
-            document.getElementById('modalImg').src = (car.images && car.images.length) ? car.images[0] : '';
-            document.getElementById('detailModal').style.display = 'flex';
-        }
-
-        function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
-        
-        loadCars();
+        loadCars(1);
     </script>
 </body>
 </html>
