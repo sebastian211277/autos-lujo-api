@@ -3,82 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso - Autos de Lujo</title>
+    <title>Autos de Lujo Exclusivos</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .toggle { text-align: center; margin-top: 10px; font-size: 0.9rem; cursor: pointer; color: #007bff; }
-        h2 { text-align: center; }
+        /* Estilos Base Estilo Lujo */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #121212; color: #e0e0e0; }
+        
+        /* Header */
+        header { background: #000; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d4af37; }
+        h1 { margin: 0; color: #d4af37; letter-spacing: 2px; text-transform: uppercase; font-size: 1.5rem; }
+        
+        .admin-btn { text-decoration: none; color: #888; font-size: 0.9rem; border: 1px solid #444; padding: 5px 15px; border-radius: 20px; transition: 0.3s; }
+        .admin-btn:hover { color: #d4af37; border-color: #d4af37; }
+
+        /* Hero Section */
+        .hero { text-align: center; padding: 60px 20px; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1503376763036-066120622c74?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; }
+        .hero h2 { font-size: 3rem; margin-bottom: 10px; color: white; }
+        .hero p { font-size: 1.2rem; color: #ccc; }
+
+        /* Grid de Autos */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        .car-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        
+        .car-card { background: #1e1e1e; border-radius: 10px; overflow: hidden; transition: transform 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid #333; }
+        .car-card:hover { transform: translateY(-5px); border-color: #d4af37; }
+        
+        .car-image { width: 100%; height: 200px; object-fit: cover; background: #333; display: flex; align-items: center; justify-content: center; color: #555; }
+        
+        .car-info { padding: 20px; }
+        .car-title { font-size: 1.4rem; color: white; margin: 0 0 10px 0; }
+        .car-specs { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; display: flex; gap: 15px; }
+        
+        .price-tag { margin-top: 15px; padding-top: 15px; border-top: 1px solid #333; }
+        .price-usd { font-size: 1.1rem; color: #fff; font-weight: bold; }
+        .price-mxn { font-size: 0.9rem; color: #d4af37; margin-top: 5px; }
+
+        footer { text-align: center; padding: 20px; margin-top: 40px; color: #555; font-size: 0.8rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2 id="title">Iniciar Sesión</h2>
-        <form id="authForm">
-            <input type="text" id="username" placeholder="Usuario (Solo para registro)" style="display: none;">
-            <input type="email" id="email" placeholder="Correo electrónico" required>
-            <input type="password" id="password" placeholder="Contraseña" required>
-            <button type="submit" id="btnAction">Entrar</button>
-        </form>
-        <p class="toggle" id="toggleMode">¿No tienes cuenta? Regístrate</p>
+
+    <header>
+        <h1>Autos Luxury</h1>
+        <a href="/login.html" class="admin-btn">Admin Access</a>
+    </header>
+
+    <div class="hero">
+        <h2>Excelencia en Movimiento</h2>
+        <p>Descubre nuestra colección exclusiva de vehículos deportivos y de lujo.</p>
     </div>
 
+    <div class="container">
+        <div id="carsList" class="car-grid">
+            <p style="text-align:center; width:100%;">Cargando inventario...</p>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 Autos Luxury México. Precios sujetos al tipo de cambio actual.
+    </footer>
+
     <script>
-        const form = document.getElementById('authForm');
-        const title = document.getElementById('title');
-        const toggle = document.getElementById('toggleMode');
-        const usernameInput = document.getElementById('username');
-        const btnAction = document.getElementById('btnAction');
-        let isLogin = true;
+        // Función para formatear dinero
+        const formatMoney = (amount, currency) => {
+            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: currency }).format(amount);
+        };
 
-        // Alternar entre Login y Registro
-        toggle.addEventListener('click', () => {
-            isLogin = !isLogin;
-            title.innerText = isLogin ? 'Iniciar Sesión' : 'Registrarse';
-            btnAction.innerText = isLogin ? 'Entrar' : 'Registrar';
-            toggle.innerText = isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia Sesión';
-            usernameInput.style.display = isLogin ? 'none' : 'block';
-            if(!isLogin) usernameInput.required = true;
-        });
-
-        // Enviar datos al Backend
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const username = document.getElementById('username').value;
-
-            // Determinar si llamamos a /login o /register
-            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-            
-            const data = isLogin ? { email, password } : { username, email, password };
-
+        // Cargar autos automáticamente al entrar
+        async function loadPublicCars() {
             try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                // Llamamos a la API (esta ruta es pública en tu backend)
+                const res = await fetch('/api/cars');
+                const responseData = await res.json();
+                
+                const list = document.getElementById('carsList');
+                list.innerHTML = ''; // Limpiar mensaje de carga
 
-                const result = await res.json();
-
-                if (res.ok) {
-                    alert('¡Éxito! ' + (result.msg || 'Bienvenido'));
-                    // Guardamos el token en el navegador
-                    localStorage.setItem('token', result.token);
-                    // Redirigir al panel de administración
-                    window.location.href = '/admin.html';
-                } else {
-                    alert('Error: ' + result.msg);
+                if (responseData.data.length === 0) {
+                    list.innerHTML = '<p>No hay autos disponibles en este momento.</p>';
+                    return;
                 }
+
+                responseData.data.forEach(car => {
+                    const div = document.createElement('div');
+                    div.className = 'car-card';
+                    
+                    // Si tienes imágenes reales úsalas, si no, usa un placeholder
+                    const imageSrc = car.image || 'https://via.placeholder.com/400x250?text=Auto+Luxury';
+
+                    div.innerHTML = `
+                        <img src="${imageSrc}" alt="${car.make}" class="car-image">
+                        <div class="car-info">
+                            <h3 class="car-title">${car.make} ${car.model}</h3>
+                            <div class="car-specs">
+                                <span>📅 ${car.year}</span>
+                                <span>🐎 ${car.horsepower} HP</span>
+                            </div>
+                            <p style="color: #ccc; font-size: 0.9rem;">${car.description || 'Sin descripción disponible.'}</p>
+                            
+                            <div class="price-tag">
+                                <div class="price-usd">US ${formatMoney(car.price, 'USD')}</div>
+                                <div class="price-mxn">MX ${formatMoney(car.priceMXN, 'MXN')} (Aprox)</div>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
             } catch (error) {
-                console.error(error);
-                alert('Error de conexión con el servidor');
+                console.error('Error:', error);
+                document.getElementById('carsList').innerHTML = '<p>Error al cargar el catálogo. Intenta más tarde.</p>';
             }
-        });
+        }
+
+        // Ejecutar al cargar la página
+        loadPublicCars();
     </script>
 </body>
 </html>

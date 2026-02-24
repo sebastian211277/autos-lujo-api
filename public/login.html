@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Administrativo</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #1a1a1a; color: white; margin: 0; }
+        .container { background: #333; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #d4af37; color: black; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #b5952f; }
+        h2 { margin-bottom: 20px; color: #d4af37; }
+        .back-link { display: block; margin-top: 15px; color: #aaa; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Panel Admin</h2>
+        <form id="authForm">
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Ingresar</button>
+        </form>
+        <a href="/" class="back-link">← Volver al Catálogo</a>
+    </div>
+
+    <script>
+        const form = document.getElementById('authForm');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Solo dejamos Login (El registro lo haremos interno o por Postman por seguridad)
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('token', result.token);
+                    window.location.href = '/admin.html';
+                } else {
+                    alert('Error: ' + (result.msg || 'Credenciales incorrectas'));
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión');
+            }
+        });
+    </script>
+</body>
+</html>
