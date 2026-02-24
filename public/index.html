@@ -3,169 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autos Luxury - Catálogo</title>
+    <title>Autos Luxury - Catálogo Exclusivo</title>
     <style>
         body { font-family: 'Helvetica Neue', sans-serif; background-color: #0a0a0a; color: #fff; margin: 0; }
         
-        /* Header */
-        header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        /* Header & Search */
+        header { padding: 20px 40px; border-bottom: 1px solid #333; background: #000; position: sticky; top: 0; z-index: 100; }
+        .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         h1 { color: #d4af37; text-transform: uppercase; letter-spacing: 2px; font-size: 1.5rem; margin: 0; }
-        .admin-link { color: #555; text-decoration: none; font-size: 0.8rem; transition: 0.3s; }
-        .admin-link:hover { color: #d4af37; }
+        
+        .search-container { flex-grow: 1; max-width: 500px; position: relative; }
+        .search-input { 
+            width: 100%; padding: 12px 20px; background: #1a1a1a; border: 1px solid #333; 
+            border-radius: 25px; color: white; font-size: 0.9rem; outline: none; transition: 0.3s;
+        }
+        .search-input:focus { border-color: #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
 
-        /* Grid */
-        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        /* Loader */
+        #loader { display: none; text-align: center; padding: 50px; }
+        .spinner { 
+            width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #d4af37; 
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Grid & Cards */
+        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; min-height: 60vh; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
-
-        /* Tarjetas */
-        .card { background: #1a1a1a; border-radius: 8px; overflow: hidden; transition: transform 0.3s; cursor: pointer; border: 1px solid #333; }
+        .card { background: #1a1a1a; border-radius: 8px; overflow: hidden; transition: 0.3s; cursor: pointer; border: 1px solid #333; animation: fadeIn 0.5s; }
         .card:hover { transform: translateY(-5px); border-color: #d4af37; }
-        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card img { width: 100%; height: 220px; object-fit: cover; }
         .card-info { padding: 15px; }
         .card-title { margin: 0; font-size: 1.2rem; }
-        .card-price { color: #d4af37; font-weight: bold; margin-top: 5px; }
-
-        /* --- VENTANA MODAL (FICHA TÉCNICA) --- */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; }
+        .card-price { color: #d4af37; font-weight: bold; margin-top: 8px; font-size: 1.1rem; }
         
-        /* Diseño del Modal: Grid de 2 columnas */
-        .modal-content { 
-            background: #151515; width: 90%; max-width: 1000px; height: 80vh; 
-            display: grid; grid-template-columns: 1.5fr 1fr; /* Izquierda Fotos, Derecha Info */
-            border-radius: 8px; overflow: hidden; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); 
-            position: relative;
-        }
-
-        /* Columna Izquierda: Galería */
+        /* Modal Detalle (El que ya teníamos) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; }
+        .modal-content { background: #151515; width: 90%; max-width: 1000px; height: 80vh; display: grid; grid-template-columns: 1.5fr 1fr; border-radius: 8px; overflow: hidden; position: relative; }
         .modal-gallery { position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
         .modal-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
-        /* Botones de navegación galería */
-        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 15px; cursor: pointer; font-size: 20px; }
-        .prev { left: 10px; } .next { right: 10px; }
-        .nav-btn:hover { background: #d4af37; color: black; }
-
-        /* Columna Derecha: Información */
-        .modal-details { padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .detail-title { font-size: 2rem; color: #d4af37; margin: 0; line-height: 1.2; }
-        .detail-price { font-size: 1.5rem; color: #fff; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .specs-row { display: flex; gap: 20px; font-size: 0.9rem; color: #aaa; }
-        .description { line-height: 1.6; color: #ccc; margin-top: 10px; white-space: pre-wrap; } /* Respeta los saltos de línea */
-        
+        .modal-details { padding: 40px; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 30px; color: #fff; cursor: pointer; z-index: 1001; }
-
-        /* Responsive para celular */
-        @media (max-width: 768px) {
-            .modal-content { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; height: 90vh; }
-            .modal-gallery { height: 100%; }
-        }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @media (max-width: 768px) { .modal-content { grid-template-columns: 1fr; height: 90vh; } .search-container { order: 3; max-width: 100%; } }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Autos Luxury</h1>
-        <a href="/login.html" class="admin-link">Admin Access</a>
+        <div class="header-container">
+            <h1>Autos Luxury</h1>
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar por marca o modelo (ej. Porsche, Ferrari)..." onkeyup="filterCars()">
+            </div>
+            
+            <a href="/login.html" style="color:#555; text-decoration:none; font-size:0.8rem;">Admin Access</a>
+        </div>
     </header>
 
     <div class="container">
-        <div id="grid" class="grid">Cargando inventario...</div>
+        <div id="loader">
+            <div class="spinner"></div>
+            <p style="color:#d4af37; margin-top:15px; letter-spacing:1px;">CONECTANDO CON EL INVENTARIO...</p>
+        </div>
+
+        <div id="noResults" style="display:none; text-align:center; padding:50px; color:#888;">
+            <span style="font-size:3rem;">🔎</span>
+            <p>No encontramos autos que coincidan con tu búsqueda.</p>
+        </div>
+
+        <div id="grid" class="grid"></div>
     </div>
 
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            
             <div class="modal-gallery">
-                <button class="nav-btn prev" onclick="moveSlide(-1)">&#10094;</button>
-                <img id="modalImg" class="modal-img" src="" alt="Auto">
-                <button class="nav-btn next" onclick="moveSlide(1)">&#10095;</button>
+                <img id="modalImg" class="modal-img" src="">
             </div>
-
             <div class="modal-details">
-                <h2 id="mTitle" class="detail-title">Modelo</h2>
-                <div class="detail-price">
-                    <div id="mPriceUSD">USD $0</div>
-                    <small id="mPriceMXN" style="font-size: 1rem; color: #888;">MXN $0</small>
-                </div>
-                
-                <div class="specs-row">
-                    <span>📅 <span id="mYear">2024</span></span>
-                    <span>🐎 <span id="mHP">500</span> HP</span>
-                </div>
-
-                <div class="description">
-                    <h3>Descripción</h3>
-                    <p id="mDesc">...</p>
-                </div>
+                <h2 id="mTitle" style="color:#d4af37;"></h2>
+                <h3 id="mPrice" style="margin-bottom:20px;"></h3>
+                <p id="mDesc" style="line-height:1.6; color:#ccc;"></p>
+                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+                <p><strong>Año:</strong> <span id="mYear"></span></p>
+                <p><strong>Potencia:</strong> <span id="mHP"></span> HP</p>
             </div>
         </div>
     </div>
 
     <script>
-        let currentCarImages = [];
-        let curIndex = 0;
-
+        let allCars = []; // Guardaremos aquí todos los autos para filtrar sin llamar a la API
+        let currentImages = [];
+        
+        // Cargar autos al inicio
         async function loadCars() {
-            const res = await fetch('/api/cars');
-            const data = await res.json();
             const grid = document.getElementById('grid');
+            const loader = document.getElementById('loader');
+            
+            grid.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                const res = await fetch('/api/cars');
+                const response = await res.json();
+                
+                allCars = response.data; // Guardamos los datos localmente
+                renderCars(allCars); // Mostramos todos por primera vez
+
+            } catch (error) {
+                grid.innerHTML = '<p style="color:red; text-align:center;">Error al conectar con el servidor.</p>';
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // Función para dibujar las tarjetas en pantalla
+        function renderCars(cars) {
+            const grid = document.getElementById('grid');
+            const noResults = document.getElementById('noResults');
             grid.innerHTML = '';
 
-            data.data.forEach(car => {
-                // Truco para pasar el objeto completo al click
-                // Reemplazamos comillas simples para evitar errores de JS
-                const carJson = JSON.stringify(car).replace(/'/g, "&#39;");
-                const cover = (car.images && car.images.length) ? car.images[0] : 'https://via.placeholder.com/400';
+            if (cars.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            }
 
+            noResults.style.display = 'none';
+            cars.forEach(car => {
+                const carJson = JSON.stringify(car).replace(/'/g, "&#39;");
+                const cover = (car.images && car.images.length) ? car.images[0] : 'https://via.placeholder.com/400x220?text=Luxury+Car';
+                
                 grid.innerHTML += `
                     <div class="card" onclick='openModal(${carJson})'>
-                        <img src="${cover}">
+                        <img src="${cover}" alt="${car.make}">
                         <div class="card-info">
                             <h3 class="card-title">${car.make} ${car.model}</h3>
                             <div class="card-price">US $${car.price.toLocaleString()}</div>
+                            <small style="color:#888;">MXN $${(car.priceMXN || 0).toLocaleString()}</small>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // --- LÓGICA DEL MODAL ---
+        // LÓGICA DEL BUSCADOR (FILTRADO EN TIEMPO REAL)
+        function filterCars() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Filtramos el array local
+            const filtered = allCars.filter(car => {
+                return car.make.toLowerCase().includes(term) || 
+                       car.model.toLowerCase().includes(term);
+            });
+
+            renderCars(filtered);
+        }
+
         function openModal(car) {
-            // 1. Llenar Textos
             document.getElementById('mTitle').innerText = `${car.make} ${car.model}`;
-            document.getElementById('mPriceUSD').innerText = `US $${car.price.toLocaleString()}`;
-            document.getElementById('mPriceMXN').innerText = `MXN $${(car.priceMXN || 0).toLocaleString()}`;
+            document.getElementById('mPrice').innerText = `US $${car.price.toLocaleString()}`;
+            document.getElementById('mDesc').innerText = car.description || 'Sin descripción.';
             document.getElementById('mYear').innerText = car.year;
             document.getElementById('mHP').innerText = car.horsepower;
-            document.getElementById('mDesc').innerText = car.description || "Sin descripción disponible.";
-
-            // 2. Configurar Galería
-            currentCarImages = car.images && car.images.length ? car.images : ['https://via.placeholder.com/800?text=Sin+Foto'];
-            curIndex = 0;
-            updateImage();
-
-            // 3. Mostrar
+            document.getElementById('modalImg').src = (car.images && car.images.length) ? car.images[0] : '';
             document.getElementById('detailModal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('detailModal').style.display = 'none';
-        }
-
-        function moveSlide(step) {
-            curIndex += step;
-            if(curIndex >= currentCarImages.length) curIndex = 0;
-            if(curIndex < 0) curIndex = currentCarImages.length - 1;
-            updateImage();
-        }
-
-        function updateImage() {
-            document.getElementById('modalImg').src = currentCarImages[curIndex];
-        }
-
-        // Cerrar con Escape
-        window.onkeydown = function(e) { if(e.key === "Escape") closeModal(); }
+        function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
         
         loadCars();
     </script>
