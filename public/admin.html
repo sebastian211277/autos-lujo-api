@@ -4,23 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin - Autos de Lujo</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f4f4; max-width: 1000px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .form-container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
+        .btn:disabled { background: #ccc !important; cursor: not-allowed; }
         .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
         .btn-logout { background: #343a40; width: auto; }
         
         /* Previsualización de fotos */
-        #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 10px; border: 1px dashed #ccc; min-height: 80px; border-radius: 4px; }
-        .preview-wrapper { position: relative; }
+        #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 10px; border: 1px dashed #ccc; min-height: 80px; border-radius: 4px; background: #fafafa; }
+        .preview-wrapper { position: relative; animation: fadeIn 0.5s; }
         .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; font-size: 12px; line-height: 20px; }
 
         .card { background: white; padding: 10px; margin-top: 10px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee; }
         .thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -30,7 +35,7 @@
     </div>
 
     <div class="form-container">
-        <h3>Agregar / Editar Auto</h3>
+        <h3 id="formTitle">Agregar / Editar Auto</h3>
         <form id="carForm">
             <input type="hidden" id="carId">
             <div style="display:flex; gap:10px;">
@@ -44,7 +49,7 @@
             </div>
 
             <label style="font-weight:bold; margin-top:15px; display:block;">Galería de Fotos:</label>
-            <small style="color:#666;">Mantén presionada la tecla <b>Ctrl</b> (o Cmd en Mac) para seleccionar varias fotos a la vez.</small>
+            <small style="color:#666;">Selecciona varias fotos. Se comprimirán automáticamente.</small>
             <input type="file" id="imageInput" multiple accept="image/*" onchange="handleFiles()">
             
             <div id="preview-container">
@@ -66,31 +71,59 @@
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/login.html';
 
-        let finalImages = []; // Aquí almacenaremos las fotos procesadas
+        let finalImages = []; 
 
-        // --- PROCESAMIENTO ROBUSTO DE IMÁGENES ---
+        // --- FUNCIÓN DE COMPRESIÓN DE IMÁGENES 📉 ---
+        // Esta función toma un archivo grande y devuelve un Base64 pequeño
+        const compressImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        // Creamos un canvas para redibujar la imagen más pequeña
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; // Reducimos a máximo 800px de ancho
+                        const scaleSize = MAX_WIDTH / img.width;
+                        
+                        // Si la imagen es más pequeña que el límite, no la tocamos
+                        if (scaleSize >= 1) {
+                            resolve(event.target.result); 
+                            return;
+                        }
+
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        // Exportamos como JPEG comprimido al 70% de calidad
+                        // Esto reduce una imagen de 5MB a ~100KB (50 veces menos)
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(compressedDataUrl);
+                    };
+                };
+            });
+        };
+
+        // --- PROCESAMIENTO DE ARCHIVOS ---
         async function handleFiles() {
             const input = document.getElementById('imageInput');
             const container = document.getElementById('preview-container');
             
             if (!input.files.length) return;
 
-            container.innerHTML = 'Procesando imágenes...';
-            finalImages = []; // Reiniciamos para esta selección
+            container.innerHTML = '<p style="color:#d4af37;">⏳ Comprimiendo imágenes para la web...</p>';
+            finalImages = [];
 
-            // Convertimos la lista de archivos en un Array de Promesas
-            const filePromises = Array.from(input.files).map(file => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result); // Devuelve el Base64
-                    reader.readAsDataURL(file);
-                });
-            });
+            // Usamos Promise.all para comprimir todas las fotos en paralelo
+            const compressPromises = Array.from(input.files).map(file => compressImage(file));
+            
+            finalImages = await Promise.all(compressPromises);
 
-            // Esperamos a que TODAS se conviertan
-            finalImages = await Promise.all(filePromises);
-
-            // Mostramos la vista previa
             renderPreview();
         }
 
@@ -98,6 +131,11 @@
             const container = document.getElementById('preview-container');
             container.innerHTML = '';
             
+            if (finalImages.length === 0) {
+                 container.innerHTML = '<p style="color:#aaa;">Las fotos aparecerán aquí...</p>';
+                 return;
+            }
+
             finalImages.forEach((imgSrc, index) => {
                 const div = document.createElement('div');
                 div.className = 'preview-wrapper';
@@ -114,7 +152,7 @@
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.innerText = "Guardando...";
+            btn.innerText = "Subiendo...";
 
             const id = document.getElementById('carId').value;
             const method = id ? 'PUT' : 'POST';
@@ -127,7 +165,7 @@
                 price: document.getElementById('price').value,
                 horsepower: document.getElementById('horsepower').value,
                 description: document.getElementById('description').value,
-                images: finalImages // Enviamos el array completo
+                images: finalImages
             };
 
             try {
@@ -138,15 +176,21 @@
                 });
 
                 if (res.ok) {
-                    alert('¡Operación Exitosa!');
+                    Swal.fire({
+                        title: '¡Excelente!',
+                        text: 'Auto guardado correctamente',
+                        icon: 'success',
+                        confirmButtonColor: '#28a745'
+                    });
                     resetForm();
                     loadCars();
                 } else {
-                    alert('Error al guardar');
+                    const errData = await res.json();
+                    Swal.fire('Error', errData.message || 'Error al guardar', 'error');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Error de conexión o imagen demasiado grande');
+                Swal.fire('Error', 'La imagen sigue siendo muy pesada o falló la conexión', 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Guardar Auto";
@@ -161,7 +205,6 @@
             list.innerHTML = '';
             
             data.data.forEach(car => {
-                // Preparamos datos para editar
                 const carStr = JSON.stringify(car).replace(/'/g, "&#39;");
                 const thumb = (car.images && car.images.length) ? car.images[0] : '';
                 
@@ -169,14 +212,15 @@
                     <div class="card">
                         <img src="${thumb}" class="thumb">
                         <div style="flex-grow:1"><b>${car.make} ${car.model}</b></div>
-                        <button onclick='editCar(${carStr})' style="margin-right:5px;">✏️</button>
-                        <button onclick="deleteCar('${car._id}')" style="background:red; color:white; border:none; padding:5px;">🗑️</button>
+                        <button onclick='editCar(${carStr})' style="margin-right:5px; cursor:pointer;">✏️</button>
+                        <button onclick="deleteCar('${car._id}')" style="background:red; color:white; border:none; padding:5px; cursor:pointer;">🗑️</button>
                     </div>
                 `;
             });
         }
 
         function editCar(car) {
+            document.getElementById('formTitle').innerText = "Editando Auto: " + car.model;
             document.getElementById('carId').value = car._id;
             document.getElementById('make').value = car.make;
             document.getElementById('model').value = car.model;
@@ -194,14 +238,26 @@
         }
 
         async function deleteCar(id) {
-            if(confirm('¿Borrar auto?')) {
-                await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: {'x-auth-token':token} });
-                loadCars();
-            }
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "No podrás revertir esto",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, borrar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: {'x-auth-token':token} });
+                    loadCars();
+                    Swal.fire('Borrado', 'El auto ha sido eliminado.', 'success');
+                }
+            })
         }
 
         function resetForm() {
             document.getElementById('carForm').reset();
+            document.getElementById('formTitle').innerText = "Agregar / Editar Auto";
             document.getElementById('carId').value = '';
             finalImages = [];
             document.getElementById('preview-container').innerHTML = '<p style="color:#aaa;">Las fotos aparecerán aquí...</p>';
