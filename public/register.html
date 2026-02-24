@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Secreto de Admin</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { background: #333; padding: 2rem; border-radius: 8px; text-align: center; border: 1px solid #d4af37; }
+        input { display: block; width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: none; }
+        button { background: #d4af37; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background: #b5952f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>👑 Crear Super Admin</h2>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Nombre de Usuario" required>
+            <input type="email" id="email" placeholder="Correo Electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Registrar Admin</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: 'admin' // <--- ¡AQUÍ ESTÁ EL TRUCO! Forzamos que sea admin
+            };
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    alert('¡Admin Creado! Ahora ve al login.');
+                    window.location.href = '/login.html'; // Te manda al login automáticamente
+                } else {
+                    alert('Error: ' + result.msg);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión');
+            }
+        });
+    </script>
+</body>
+</html>
