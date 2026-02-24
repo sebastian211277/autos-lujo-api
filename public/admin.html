@@ -7,12 +7,12 @@
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
+        .card img { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; }
         .form-container { background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; }
-        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
         .btn-logout { background: #dc3545; }
-        .price-mxn { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -24,55 +24,54 @@
     <div class="form-container">
         <h3>Agregar Nuevo Auto</h3>
         <form id="carForm">
-            <input type="text" id="make" placeholder="Marca (ej. Ferrari)" required>
-            <input type="text" id="model" placeholder="Modelo (ej. 488 Spider)" required>
+            <input type="text" id="make" placeholder="Marca (ej. Porsche)" required>
+            <input type="text" id="model" placeholder="Modelo (ej. 911 GT3)" required>
             <input type="number" id="year" placeholder="Año" required>
             <input type="number" id="price" placeholder="Precio en USD" required>
             <input type="number" id="horsepower" placeholder="Caballos de fuerza" required>
+            
+            <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Pega los enlaces de las imágenes (uno por línea o separados por coma):</p>
+            <textarea id="images" rows="4" placeholder="https://imagen1.com&#10;https://imagen2.com&#10;https://imagen3.com"></textarea>
+            
             <textarea id="description" placeholder="Descripción"></textarea>
             <button type="submit">Guardar Auto</button>
         </form>
     </div>
 
-    <div id="carsList">
-        <p>Cargando autos...</p>
-    </div>
+    <div id="carsList"><p>Cargando autos...</p></div>
 
     <script>
-        // Verificar si hay sesión iniciada
         const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/index.html'; // Si no hay token, fuera
-        }
+        if (!token) window.location.href = '/login.html';
 
-        // Cargar autos al iniciar
         async function loadCars() {
             try {
                 const res = await fetch('/api/cars');
                 const data = await res.json();
-                
                 const list = document.getElementById('carsList');
-                list.innerHTML = ''; // Limpiar lista
+                list.innerHTML = '';
 
                 data.data.forEach(car => {
                     const div = document.createElement('div');
                     div.className = 'card';
+                    // Mostramos la primera imagen como miniatura
+                    const thumb = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/100';
                     div.innerHTML = `
-                        <h3>${car.make} ${car.model} (${car.year})</h3>
-                        <p>Precio USD: $${car.price.toLocaleString()}</p>
-                        <p class="price-mxn">Precio MXN: $${car.priceMXN ? car.priceMXN.toLocaleString() : 'N/A'}</p>
-                        <small>ID: ${car._id}</small>
+                        <img src="${thumb}" alt="thumb">
+                        <div>
+                            <h3>${car.make} ${car.model}</h3>
+                            <small>ID: ${car._id}</small>
+                        </div>
                     `;
                     list.appendChild(div);
                 });
-            } catch (error) {
-                console.error('Error cargando autos:', error);
-            }
+            } catch (error) { console.error(error); }
         }
 
-        // Enviar nuevo auto
         document.getElementById('carForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            // Convertimos el texto del textarea en un Array
+            const imagesText = document.getElementById('images').value;
             
             const newCar = {
                 make: document.getElementById('make').value,
@@ -80,36 +79,22 @@
                 year: document.getElementById('year').value,
                 price: document.getElementById('price').value,
                 horsepower: document.getElementById('horsepower').value,
-                description: document.getElementById('description').value
+                description: document.getElementById('description').value,
+                images: imagesText // Enviamos el texto, el backend lo procesará
             };
 
             try {
                 const res = await fetch('/api/cars', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-auth-token': token // Enviamos el token para autenticar
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify(newCar)
                 });
-
-                if (res.ok) {
-                    alert('Auto creado correctamente');
-                    loadCars(); // Recargar la lista
-                    e.target.reset(); // Limpiar formulario
-                } else {
-                    alert('Error al crear auto');
-                }
-            } catch (error) {
-                console.error(error);
-            }
+                if (res.ok) { alert('Auto creado'); loadCars(); e.target.reset(); }
+                else { alert('Error al crear'); }
+            } catch (error) { console.error(error); }
         });
 
-        function logout() {
-            localStorage.removeItem('token');
-            window.location.href = '/index.html';
-        }
-
+        function logout() { localStorage.removeItem('token'); window.location.href = '/login.html'; }
         loadCars();
     </script>
 </body>
