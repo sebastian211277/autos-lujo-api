@@ -7,12 +7,23 @@
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: center; }
-        .card img { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; }
-        .form-container { background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; }
-        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { background: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
-        .btn-logout { background: #dc3545; }
+        .form-container { background: white; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Estilo para el input de archivos */
+        input[type="file"] { padding: 10px; background: #f8f9fa; border: 1px dashed #ccc; cursor: pointer; }
+        
+        button { background: #28a745; color: white; border: none; padding: 12px 20px; cursor: pointer; border-radius: 4px; font-size: 1rem; width: 100%; margin-top: 10px; }
+        button:hover { background: #218838; }
+        .btn-logout { background: #dc3545; width: auto; margin: 0; }
+
+        /* Previsualización de fotos */
+        #preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; }
+
+        /* Lista de autos */
+        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 4px; background: #eee; }
     </style>
 </head>
 <body>
@@ -26,15 +37,19 @@
         <form id="carForm">
             <input type="text" id="make" placeholder="Marca (ej. Porsche)" required>
             <input type="text" id="model" placeholder="Modelo (ej. 911 GT3)" required>
-            <input type="number" id="year" placeholder="Año" required>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="year" placeholder="Año" required>
+                <input type="number" id="horsepower" placeholder="HP" required>
+            </div>
             <input type="number" id="price" placeholder="Precio en USD" required>
-            <input type="number" id="horsepower" placeholder="Caballos de fuerza" required>
             
-            <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Pega los enlaces de las imágenes (uno por línea o separados por coma):</p>
-            <textarea id="images" rows="4" placeholder="https://imagen1.com&#10;https://imagen2.com&#10;https://imagen3.com"></textarea>
+            <label style="font-weight:bold; display:block; margin-top:10px;">Subir Fotos (Máx 5):</label>
+            <input type="file" id="imageInput" multiple accept="image/*" onchange="previewImages()">
+            <div id="preview-container"></div>
             
-            <textarea id="description" placeholder="Descripción"></textarea>
-            <button type="submit">Guardar Auto</button>
+            <textarea id="description" rows="3" placeholder="Descripción del vehículo"></textarea>
+            
+            <button type="submit" id="submitBtn">Guardar Auto</button>
         </form>
     </div>
 
@@ -43,6 +58,36 @@
     <script>
         const token = localStorage.getItem('token');
         if (!token) window.location.href = '/login.html';
+
+        let base64Images = []; // Aquí guardaremos las fotos convertidas
+
+        // Función para leer los archivos y convertirlos a Base64
+        function previewImages() {
+            const input = document.getElementById('imageInput');
+            const container = document.getElementById('preview-container');
+            container.innerHTML = ''; // Limpiar previos
+            base64Images = []; // Reiniciar array
+
+            if (input.files) {
+                // Limitamos a 5 fotos
+                const files = Array.from(input.files).slice(0, 5);
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Guardamos el string base64
+                        base64Images.push(e.target.result);
+                        
+                        // Creamos la miniatura visual
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'preview-img';
+                        container.appendChild(img);
+                    };
+                    reader.readAsDataURL(file); // ¡Aquí ocurre la magia!
+                });
+            }
+        }
 
         async function loadCars() {
             try {
@@ -54,13 +99,14 @@
                 data.data.forEach(car => {
                     const div = document.createElement('div');
                     div.className = 'card';
-                    // Mostramos la primera imagen como miniatura
-                    const thumb = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/100';
+                    // Usamos la primera foto o un placeholder
+                    const thumbSrc = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/100?text=No+Foto';
+                    
                     div.innerHTML = `
-                        <img src="${thumb}" alt="thumb">
+                        <img src="${thumbSrc}" class="thumb" alt="auto">
                         <div>
-                            <h3>${car.make} ${car.model}</h3>
-                            <small>ID: ${car._id}</small>
+                            <h3 style="margin:0;">${car.make} ${car.model}</h3>
+                            <small>USD $${car.price.toLocaleString()}</small>
                         </div>
                     `;
                     list.appendChild(div);
@@ -70,9 +116,10 @@
 
         document.getElementById('carForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Convertimos el texto del textarea en un Array
-            const imagesText = document.getElementById('images').value;
-            
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "Subiendo fotos...";
+            btn.disabled = true;
+
             const newCar = {
                 make: document.getElementById('make').value,
                 model: document.getElementById('model').value,
@@ -80,7 +127,7 @@
                 price: document.getElementById('price').value,
                 horsepower: document.getElementById('horsepower').value,
                 description: document.getElementById('description').value,
-                images: imagesText // Enviamos el texto, el backend lo procesará
+                images: base64Images // Enviamos las fotos convertidas
             };
 
             try {
@@ -89,9 +136,24 @@
                     headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                     body: JSON.stringify(newCar)
                 });
-                if (res.ok) { alert('Auto creado'); loadCars(); e.target.reset(); }
-                else { alert('Error al crear'); }
-            } catch (error) { console.error(error); }
+                
+                if (res.ok) { 
+                    alert('¡Auto subido con éxito!'); 
+                    loadCars(); 
+                    e.target.reset(); 
+                    document.getElementById('preview-container').innerHTML = '';
+                    base64Images = [];
+                } else { 
+                    const err = await res.json();
+                    alert('Error: ' + err.message); 
+                }
+            } catch (error) { 
+                console.error(error); 
+                alert('Error de conexión o imagen muy pesada');
+            } finally {
+                btn.innerText = "Guardar Auto";
+                btn.disabled = false;
+            }
         });
 
         function logout() { localStorage.removeItem('token'); window.location.href = '/login.html'; }
