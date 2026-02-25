@@ -3,90 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxury Garage | Premium Dealership</title>
-    <style>
-        :root {
-            --dark-matte: #121213;
-            --gray-deep: #1c1c1e;
-            --gold-accent: #d4af37;
-            --text-gray: #a1a1a6;
-        }
-
-        body { font-family: 'Inter', sans-serif; background-color: var(--dark-matte); color: #fff; margin: 0; }
-
-        /* HEADER & MENU */
-        header { background: #fff; padding: 15px 40px; display: flex; align-items: center; position: sticky; top: 0; z-index: 1000; color: #000; }
-        
-        .menu-container { position: relative; display: inline-block; cursor: pointer; }
-        .menu-btn { display: flex; align-items: center; gap: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .bar { width: 25px; height: 3px; background: #000; margin: 4px 0; transition: 0.3s; }
-        
-        .dropdown { 
-            display: none; position: absolute; top: 100%; left: 0; background: #fff; 
-            min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); border-radius: 0 0 8px 8px;
-        }
-        .menu-container:hover .dropdown { display: block; }
-        .dropdown a { color: #000; padding: 12px 20px; text-decoration: none; display: block; font-size: 0.9rem; }
-        .dropdown a:hover { background: #f4f4f4; color: var(--gold-accent); }
-
-        /* HERO GALLERY */
-        .hero { height: 70vh; display: flex; background: #000; overflow: hidden; position: relative; }
-        .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: opacity 0.5s ease; }
-        .hero-info { position: absolute; bottom: 40px; right: 40px; text-align: right; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 4px; border-right: 4px solid var(--gold-accent); }
-        .hero-price { font-size: 2.5rem; font-weight: bold; color: var(--gold-accent); }
-
-        /* BRANDS SECTION */
-        .brands-bar { padding: 40px; display: flex; justify-content: center; gap: 50px; background: var(--gray-deep); align-items: center; }
-        .brand-logo { height: 40px; filter: grayscale(1) brightness(2); cursor: pointer; transition: 0.3s; opacity: 0.6; }
-        .brand-logo:hover { filter: grayscale(0) brightness(1); opacity: 1; transform: scale(1.1); }
-
-        /* GRID */
-        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
-        .card { background: var(--gray-deep); border-radius: 12px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; }
-        .card:hover { border-color: var(--gold-accent); transform: translateY(-5px); }
-    </style>
+    <title>Luxury Garage | Exclusive Inventory</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <header>
-        <div class="menu-container">
+        <div class="menu-container" id="menuContainer">
             <div class="menu-btn">
-                <div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
-                <span>Menu</span>
+                <span>☰ MENU</span>
             </div>
-            <div class="dropdown">
-                <a href="#" onclick="loadFilteredCars('')">View All</a>
-                <a href="#" onclick="loadFilteredCars('Cars')">Cars</a>
-                <a href="#" onclick="loadFilteredCars('Pickups')">Pickups</a>
-                <a href="#" onclick="loadFilteredCars('SUV')">SUV</a>
-                <a href="#" onclick="loadFilteredCars('Hybrid & Electric')">Hybrid & Electric</a>
+            <div class="menu-dropdown">
+                <a href="#" onclick="filterCars('')">View All</a>
+                <a href="#" onclick="filterCars('Cars')">Sports & Sedans</a>
+                <a href="#" onclick="filterCars('SUV')">SUVs</a>
+                <a href="#" onclick="filterCars('Pickups')">Pickups</a>
+                <a href="#" onclick="filterCars('Hybrid & Electric')">Hybrid & Electric</a>
             </div>
         </div>
-        <h2 style="margin-left:auto; font-size:1.2rem; letter-spacing:2px;">LUXURY GARAGE</h2>
+        <div class="brand-name">Luxury Garage</div>
     </header>
 
     <section class="hero" id="heroSection">
-        <img src="https://images.unsplash.com/photo-1503376763036-066120622c74" class="hero-img" id="heroImg">
-        <div class="hero-info">
-            <h2 id="heroTitle">Luxury Garage</h2>
-            <div class="hero-price" id="heroPrice">Premium Selection</div>
-            <p id="heroDesc">Selecciona un vehículo para ver detalles.</p>
+        <div class="hero-bg" id="heroBg"></div>
+        <div class="hero-content" id="heroContent">
+            <h2 class="hero-title" id="heroTitle">Cargando...</h2>
+            <div class="hero-price" id="heroPrice"></div>
+            <p class="hero-desc" id="heroDesc">Experiencia de lujo.</p>
         </div>
     </section>
 
-    <div class="brands-bar">
-        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Porsche_logo.svg/1200px-Porsche_logo.svg.png" class="brand-logo" onclick="loadByBrand('Porsche')">
-        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d1/Ferrari-Logo.svg/1200px-Ferrari-Logo.svg.png" class="brand-logo" onclick="loadByBrand('Ferrari')">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/1200px-BMW.svg.png" class="brand-logo" onclick="loadByBrand('BMW')">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Benz_Logo_2010.svg/1200px-Mercedes-Benz_Logo_2010.svg.png" class="brand-logo" onclick="loadByBrand('Mercedes')">
+    <div style="background:#111; padding:30px; display:flex; justify-content:center; gap:40px; flex-wrap:wrap;">
+        <span style="color:#444; font-size:0.9rem;">FILTRAR POR MARCA (Próximamente)</span>
     </div>
 
     <div class="container">
-        <h3 id="categoryTitle" style="color:var(--gold-accent); text-transform:uppercase; margin-bottom:30px;">Inventario Completo</h3>
-        <div id="grid" class="grid"></div>
+        <h3 class="section-title" id="gridTitle">Inventario Completo</h3>
+        <div class="grid" id="grid">
+            </div>
     </div>
 
-    <script src="index.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
