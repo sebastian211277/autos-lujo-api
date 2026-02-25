@@ -5,48 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Luxury Garage</title>
     <style>
-        :root {
-            --bg-dark: #121213;
-            --panel-gray: #1c1c1e;
-            --gold: #d4af37;
-            --text-light: #f5f5f7;
-        }
+        :root { --bg-dark: #121213; --panel-gray: #1c1c1e; --gold: #d4af37; --text-light: #f5f5f7; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-light); margin: 0; padding: 20px; }
-        
-        /* Layout */
         .dashboard { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
-        
-        /* Formulario */
         .panel { background: var(--panel-gray); padding: 25px; border-radius: 12px; border: 1px solid #333; }
         h2 { color: var(--gold); margin-top: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; }
-        
-        input, select, textarea {
-            width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333; 
-            color: white; border-radius: 6px; box-sizing: border-box; font-family: inherit;
-        }
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; }
         input:focus { border-color: var(--gold); outline: none; }
-
-        /* Checkbox Destacado */
-        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #2c2c2e; padding: 10px; border-radius: 6px; }
-        .checkbox-group input { width: auto; margin: 0; }
         
-        /* Botón Guardar */
-        .btn-save { width: 100%; background: var(--gold); color: black; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        /* ESTO ES LO QUE FALTABA O NO SE VEÍA */
+        .checkbox-group { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #2c2c2e; padding: 15px; border-radius: 6px; border: 1px solid #444; }
+        .checkbox-group input { width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--gold); }
+        .checkbox-group label { cursor: pointer; font-weight: bold; color: var(--gold); }
+        
+        .btn-save { width: 100%; background: var(--gold); color: black; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-save:hover { background: #b5952f; }
-
-        /* Lista de Inventario */
         .inventory-list { display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
         .inventory-item { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 10px; border-radius: 6px; border-left: 3px solid #333; }
-        .inventory-item.featured { border-left-color: var(--gold); } /* Borde dorado si es destacado */
-        
+        .inventory-item.featured { border-left: 4px solid var(--gold); background: #1a1a1a; }
         .item-info { display: flex; gap: 15px; align-items: center; }
         .item-thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
         .btn-delete { background: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-
     </style>
 </head>
 <body>
-
     <header style="margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px;">
         <h1>Luxury Garage <span style="color:var(--gold)">Manager</span></h1>
     </header>
@@ -57,27 +39,24 @@
             <form id="carForm">
                 <input type="text" id="make" placeholder="Marca (Ej: Porsche)" required>
                 <input type="text" id="model" placeholder="Modelo (Ej: 911 GT3)" required>
-                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <input type="number" id="year" placeholder="Año" required>
                     <input type="number" id="price" placeholder="Precio (USD)" required>
                 </div>
-
                 <select id="type">
                     <option value="Cars">Cars (Deportivos/Sedan)</option>
                     <option value="SUV">SUV</option>
                     <option value="Pickups">Pickups</option>
                     <option value="Hybrid & Electric">Hybrid & Electric</option>
                 </select>
-
                 <textarea id="description" rows="4" placeholder="Descripción detallada..."></textarea>
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="isFeatured">
-                    <label for="isFeatured">🏆 Destacar en Portada (Hero Section)</label>
+                    <label for="isFeatured">🏆 Destacar en Portada (Carrusel)</label>
                 </div>
 
-                <label style="display:block; margin-bottom:5px; color:#aaa;">Fotografías (Máx 10)</label>
+                <label style="display:block; margin-bottom:5px; color:#aaa;">Fotografías (La primera será la del carrusel)</label>
                 <input type="file" id="images" multiple accept="image/*" required>
 
                 <button type="submit" class="btn-save">Guardar en Inventario</button>
@@ -91,7 +70,6 @@
             </div>
         </div>
     </div>
-
     <script src="js/admin.js"></script>
 </body>
 </html>
