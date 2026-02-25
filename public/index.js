@@ -1,256 +1,153 @@
-// public/script.js
+const grid = document.getElementById('grid');
+const categoryTitle = document.getElementById('categoryTitle');
 
-// Variables globales
-let token = localStorage.getItem('token');
-let allCars = []; 
-let isRegisterMode = false; 
+// Cargar todos los autos al inicio
+document.addEventListener('DOMContentLoaded', () => {
+    loadFilteredCars('');
+});
 
-// Elementos DOM
-const welcomeScreen = document.getElementById('welcome-screen');
-const loginSection = document.getElementById('login-section');
-const adminPanel = document.getElementById('admin-panel');
-const filtersSection = document.getElementById('filters-section'); // Nuevo
-const gallerySection = document.getElementById('gallery-section');
-const navbar = document.getElementById('navbar');
-const userDisplay = document.getElementById('user-display');
-const modal = document.getElementById('car-modal'); // Nuevo
+// Función principal para cargar autos
+async function loadFilteredCars(type) {
+    try {
+        let url = '/api/cars';
+        if (type) url += `?type=${encodeURIComponent(type)}`;
 
-// Elementos Formulario
-const carIdInput = document.getElementById('car-id');
-const formTitle = document.getElementById('form-title');
-const submitBtn = document.getElementById('submit-btn');
-const cancelBtn = document.getElementById('cancel-btn');
+        const res = await fetch(url);
+        const response = await res.json();
+        
+        // Actualizar título
+        categoryTitle.innerText = type ? `${type} Inventory` : 'Inventario Completo';
+        
+        // Limpiar grid
+        grid.innerHTML = '';
 
-// --- INICIO ---
-if(token) enterAsAdmin();
+        // Generar tarjetas
+        response.data.forEach(car => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            // Al hacer clic, llamamos a la función de detalles
+            card.onclick = () => showCarDetails(car._id);
 
-// --- NAVEGACIÓN ---
-function showWelcome() { hideAll(); welcomeScreen.classList.remove('hidden'); }
+            // Imagen principal (o placeholder si no hay)
+            const mainImage = car.images && car.images.length > 0 
+                ? car.images[0] 
+                : 'https://via.placeholder.com/400x300?text=No+Image';
 
-function showLogin() { 
-    hideAll(); 
-    loginSection.classList.remove('hidden');
-    isRegisterMode = true; toggleAuthMode(); 
-}
+            card.innerHTML = `
+                <img src="${mainImage}" style="width:100%; height:200px; object-fit:cover;">
+                <div style="padding:15px;">
+                    <h4 style="margin:0 0 10px; color:#fff;">${car.make} ${car.model}</h4>
+                    <div style="display:flex; justify-content:space-between; color:var(--text-gray); font-size:0.9rem;">
+                        <span>${car.year}</span>
+                        <span style="color:var(--gold-accent); font-weight:bold;">$${Number(car.price).toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
 
-function enterAsGuest() {
-    hideAll();
-    token = null;
-    navbar.classList.remove('hidden');
-    filtersSection.classList.remove('hidden'); // Mostrar filtros
-    gallerySection.classList.remove('hidden');
-    userDisplay.innerText = "👀 Invitado";
-    loadCars(); 
-}
-
-function enterAsAdmin() {
-    hideAll();
-    navbar.classList.remove('hidden');
-    adminPanel.classList.remove('hidden');
-    filtersSection.classList.remove('hidden'); // Mostrar filtros
-    gallerySection.classList.remove('hidden');
-    userDisplay.innerText = "👨‍💻 Admin";
-    loadCars(); 
-}
-
-function hideAll() {
-    welcomeScreen.classList.add('hidden');
-    loginSection.classList.add('hidden');
-    adminPanel.classList.add('hidden');
-    filtersSection.classList.add('hidden');
-    gallerySection.classList.add('hidden');
-    navbar.classList.add('hidden');
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    token = null;
-    location.reload(); 
-}
-
-// --- AUTENTICACIÓN (Igual que antes, resumido) ---
-function toggleAuthMode() {
-    isRegisterMode = !isRegisterMode;
-    const title = document.getElementById('auth-title');
-    const btn = document.getElementById('auth-btn');
-    const toggle = document.getElementById('toggle-auth');
-    const user = document.getElementById('username');
-    
-    if(isRegisterMode) {
-        title.innerText = "📝 Registro"; btn.innerText = "Registrarse"; toggle.innerText = "Ir al Login"; user.classList.remove('hidden');
-    } else {
-        title.innerText = "🔒 Login"; btn.innerText = "Entrar"; toggle.innerText = "Ir al Registro"; user.classList.add('hidden');
+    } catch (error) {
+        console.error('Error cargando autos:', error);
+        grid.innerHTML = '<p style="color:red">Error de conexión con el servidor</p>';
     }
 }
 
-async function submitAuth() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const username = document.getElementById('username').value;
-    const url = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
-    const body = isRegisterMode ? {username, email, password} : {email, password};
-
-    try {
-        const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-        const data = await res.json();
-        if(res.ok && isRegisterMode) { alert("¡Registrado!"); toggleAuthMode(); }
-        else if(data.token) { token = data.token; localStorage.setItem('token', token); enterAsAdmin(); }
-        else { alert(data.msg || "Error"); }
-    } catch(e) { console.error(e); }
-}
-
-// --- LOGICA DE CARGA Y FILTRADO (¡NUEVO!) ---
-
-async function loadCars() {
+// Cargar por Marca (para los logos)
+async function loadByBrand(brand) {
+    // Nota: Esto asume que tu backend soporta filtrado por marca, 
+    // si no, filtraremos en el cliente por ahora.
     const res = await fetch('/api/cars');
-    allCars = await res.json();
-    applyFilters(); // Llamamos al filtro en vez de renderizar directo
-}
+    const response = await res.json();
+    const filtered = response.data.filter(c => c.make.toLowerCase().includes(brand.toLowerCase()));
+    
+    categoryTitle.innerText = `Resultados para: ${brand}`;
+    grid.innerHTML = '';
 
-function applyFilters() {
-    const searchText = document.getElementById('search-input').value.toLowerCase();
-    const category = document.getElementById('filter-category').value;
-    const sortType = document.getElementById('filter-sort').value;
-
-    // 1. Filtrar
-    let filtered = allCars.filter(car => {
-        const matchText = car.brand.toLowerCase().includes(searchText) || car.model.toLowerCase().includes(searchText);
-        const matchCat = category === 'all' || car.category === category;
-        return matchText && matchCat;
-    });
-
-    // 2. Ordenar
-    if(sortType === 'price-asc') filtered.sort((a,b) => a.price - b.price);
-    if(sortType === 'price-desc') filtered.sort((a,b) => b.price - a.price);
-    if(sortType === 'hp-desc') filtered.sort((a,b) => b.horsepower - a.horsepower);
-    if(sortType === 'newest') filtered.sort((a,b) => b.year - a.year);
-
-    renderCars(filtered);
-}
-
-function renderCars(carsToRender) {
-    const container = document.getElementById('cars-container');
-    container.innerHTML = '';
-
-    if(carsToRender.length === 0) {
-        container.innerHTML = '<p style="color: gray;">No se encontraron autos 🤷‍♂️</p>';
+    if(filtered.length === 0) {
+        grid.innerHTML = '<p>No hay vehículos de esta marca disponibles.</p>';
         return;
     }
 
-    carsToRender.forEach(car => {
-        let adminButtons = '';
-        if (token) {
-            // Nota el stopPropagation: evita que se abra el modal al dar click en editar/borrar
-            adminButtons = `
-                <div style="margin-top: 10px; display: flex; gap: 5px;">
-                    <button onclick="event.stopPropagation(); startEdit('${car._id}')" style="background: #f39c12; font-size: 0.8em; padding: 5px;">✏️</button>
-                    <button onclick="event.stopPropagation(); deleteCar('${car._id}')" style="background: #c0392b; font-size: 0.8em; padding: 5px;">🗑️</button>
-                </div>
-            `;
-        }
+    filtered.forEach(car => {
+        // Reutilizamos la lógica de creación de cartas (podrías hacer una función separada para esto)
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => showCarDetails(car._id); // <--- CLIC AQUÍ
+        
+        const mainImage = car.images[0] || 'https://via.placeholder.com/400x300';
 
-        // Agregamos onclick al div card para abrir el modal
-        container.innerHTML += `
-            <div class="card" onclick="openModal('${car._id}')" style="cursor: pointer;">
-                <img src="${car.imageUrl}" alt="${car.brand}" onerror="this.src='https://via.placeholder.com/400'">
-                <h3>${car.brand} ${car.model}</h3>
-                <p style="color: #aaa; font-size: 0.8em;">${car.category || 'Superauto'}</p>
-                <p>🐎 ${car.horsepower} HP | 📅 ${car.year}</p>
-                <p class="price">$${car.price.toLocaleString()}</p>
-                ${adminButtons} 
+        card.innerHTML = `
+            <img src="${mainImage}" style="width:100%; height:200px; object-fit:cover;">
+            <div style="padding:15px;">
+                <h4 style="margin:0 0 10px; color:#fff;">${car.make} ${car.model}</h4>
+                <div style="display:flex; justify-content:space-between; color:var(--text-gray); font-size:0.9rem;">
+                    <span>${car.year}</span>
+                    <span style="color:var(--gold-accent); font-weight:bold;">$${Number(car.price).toLocaleString()}</span>
+                </div>
             </div>
         `;
+        grid.appendChild(card);
     });
 }
 
-// --- MODAL (¡NUEVO!) ---
-function openModal(id) {
-    const car = allCars.find(c => c._id === id);
-    if(!car) return;
+// --- MAGIA DEL MODAL (VENTANA EMERGENTE) ---
+async function showCarDetails(id) {
+    // 1. Obtener datos frescos del auto
+    const res = await fetch(`/api/cars/${id}`);
+    const car = await res.json();
 
-    document.getElementById('modal-img').src = car.imageUrl;
-    document.getElementById('modal-title').innerText = `${car.brand} ${car.model}`;
-    document.getElementById('modal-category').innerText = car.category || 'Categoría no especificada';
-    document.getElementById('modal-desc').innerText = car.description || 'Este vehículo no tiene una descripción detallada aún. Contacte al vendedor para más información.';
-    document.getElementById('modal-year').innerText = car.year;
-    document.getElementById('modal-hp').innerText = car.horsepower;
-    document.getElementById('modal-price').innerText = car.price.toLocaleString();
+    // 2. Crear el HTML del modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 2000; display: flex;
+        justify-content: center; align-items: center; backdrop-filter: blur(5px);
+    `;
 
-    modal.classList.remove('hidden');
-}
-
-function closeModal(event, force = false) {
-    // Cerrar solo si se da click en la X o en el fondo oscuro (no en el contenido)
-    if (force || event.target === modal) {
-        modal.classList.add('hidden');
+    // Generar galería de imágenes miniatura
+    let thumbnails = '';
+    if (car.images && car.images.length > 0) {
+        car.images.forEach(img => {
+            thumbnails += `<img src="${img}" style="width:60px; height:60px; object-fit:cover; border:1px solid #333; cursor:pointer; margin-right:5px;" onclick="document.getElementById('mainModalImg').src = this.src">`;
+        });
     }
-}
 
-// --- GUARDAR / EDITAR / ELIMINAR ---
-async function saveCar() {
-    const id = carIdInput.value;
-    const carData = {
-        brand: document.getElementById('brand').value,
-        model: document.getElementById('model').value,
-        category: document.getElementById('category').value, // Nuevo
-        description: document.getElementById('description').value, // Nuevo
-        year: document.getElementById('year').value,
-        price: document.getElementById('price').value,
-        horsepower: document.getElementById('hp').value,
-        imageUrl: document.getElementById('image').value || 'https://via.placeholder.com/400'
-    };
+    modal.innerHTML = `
+        <div style="background:#1c1c1e; width:90%; max-width:800px; max-height:90vh; overflow-y:auto; border-radius:12px; position:relative; display:flex; flex-wrap:wrap;">
+            <button onclick="this.closest('div').parentElement.remove()" style="position:absolute; top:10px; right:10px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+            
+            <div style="flex:1; min-width:300px;">
+                <img id="mainModalImg" src="${car.images ? car.images[0] : ''}" style="width:100%; height:100%; object-fit:cover; display:block;">
+            </div>
 
-    const url = id ? `/api/cars/${id}` : '/api/cars';
-    const method = id ? 'PUT' : 'POST';
+            <div style="flex:1; padding:30px; min-width:300px; color:white;">
+                <h2 style="color:var(--gold-accent); margin-top:0;">${car.make} ${car.model}</h2>
+                <h3 style="font-weight:300;">$${Number(car.price).toLocaleString()} USD</h3>
+                
+                <div style="margin:20px 0; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem; color:#aaa;">
+                    <div>📅 Año: <span style="color:white">${car.year}</span></div>
+                    <div>🐎 HP: <span style="color:white">${car.horsepower || 'N/A'}</span></div>
+                    <div>🚘 Tipo: <span style="color:white">${car.type || 'N/A'}</span></div>
+                </div>
 
-    const res = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-        body: JSON.stringify(carData)
-    });
+                <p style="line-height:1.6; color:#ccc;">${car.description || 'Sin descripción disponible.'}</p>
+                
+                <div style="margin-top:20px;">
+                    ${thumbnails}
+                </div>
 
-    if(res.ok) { resetForm(); loadCars(); }
-    else { alert('Error al guardar'); }
-}
+                <button style="width:100%; background:var(--gold-accent); color:black; padding:15px; border:none; font-weight:bold; margin-top:20px; cursor:pointer; text-transform:uppercase;" onclick="alert('Contactando vendedor...')">
+                    Interesado
+                </button>
+            </div>
+        </div>
+    `;
 
-function startEdit(id) {
-    const car = allCars.find(c => c._id === id);
-    if(!car) return;
+    // 3. Agregar al cuerpo
+    document.body.appendChild(modal);
 
-    document.getElementById('brand').value = car.brand;
-    document.getElementById('model').value = car.model;
-    document.getElementById('category').value = car.category || 'Coupe'; // Nuevo
-    document.getElementById('description').value = car.description || ''; // Nuevo
-    document.getElementById('year').value = car.year;
-    document.getElementById('price').value = car.price;
-    document.getElementById('hp').value = car.horsepower;
-    document.getElementById('image').value = car.imageUrl;
-    
-    carIdInput.value = car._id;
-    formTitle.innerText = "✏️ Editando Auto";
-    submitBtn.innerText = "Actualizar";
-    submitBtn.style.background = "#f39c12"; 
-    cancelBtn.classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function resetForm() {
-    document.getElementById('brand').value = '';
-    document.getElementById('model').value = '';
-    document.getElementById('description').value = '';
-    document.getElementById('year').value = '';
-    document.getElementById('price').value = '';
-    document.getElementById('hp').value = '';
-    document.getElementById('image').value = '';
-    carIdInput.value = '';
-    formTitle.innerText = "➕ Agregar Nuevo Auto";
-    submitBtn.innerText = "Guardar Auto";
-    submitBtn.style.background = "#e74c3c"; 
-    cancelBtn.classList.add('hidden');
-}
-
-async function deleteCar(id) {
-    if(!confirm('¿Eliminar auto?')) return;
-    const res = await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: { 'x-auth-token': token } });
-    if(res.ok) loadCars();
+    // Cerrar si clic afuera
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    }
 }
