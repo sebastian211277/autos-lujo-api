@@ -1,151 +1,141 @@
 const Car = require('../models/Car');
-const axios = require('axios');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// 1. OBTENER AUTOS (GET) - Ahora con FILTROS, MXN y Paginación
+// --- CONFIGURACIÓN DE MULTER (Subida de Imágenes) ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/'); // Carpeta donde caen las fotos
+    },
+    filename: function (req, file, cb) {
+        // Genera nombre único: 'porsche-911-174050923.jpg'
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+// Filtro para aceptar solo imágenes
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('¡Solo se permiten archivos de imagen!'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB por foto
+});
+
+// --- FUNCIONES DEL CONTROLADOR ---
+
+// 1. OBTENER TODOS LOS AUTOS (Con filtros)
 exports.getCars = async (req, res) => {
     try {
-        // Extraemos filtros de la URL (Query Params)
-        const { type, make } = req.query;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        // Construimos el objeto de búsqueda dinámico
+        const { type, featured } = req.query;
         let query = {};
-        
-        // Si el usuario filtró por Categoría (Cars, SUV, etc.)
-        if (type) {
-            query.type = type;
-        }
 
-        // Si el usuario filtró por Marca (Porsche, Ferrari, etc.)
-        // Usamos regex para que sea flexible (no importa mayúsculas/minúsculas)
-        if (make) {
-            query.make = { $regex: make, $options: 'i' };
-        }
+        // Si la URL dice ?type=SUV, filtramos por SUV
+        if (type) query.type = type;
+        // Si la URL dice ?featured=true, filtramos los destacados
+        if (featured) query.isFeatured = true;
 
-        // Ejecutamos la búsqueda con el filtro aplicado
-        const cars = await Car.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        // Importante: Contar documentos basándonos en el filtro para que la paginación no mienta
-        const total = await Car.countDocuments(query);
-
-        // Obtener tipo de cambio dinámico
-        let exchangeRate = 20;
-        try {
-            const response = await axios.get('https://api.frankfurter.app/latest?from=USD&to=MXN');
-            exchangeRate = response.data.rates.MXN;
-        } catch (apiError) {
-            console.error("⚠️ Error API Divisas, usando valor por defecto:", apiError.message);
-        }
-
-        const carsWithMXN = cars.map(car => {
-            const carObj = car.toObject();
-            carObj.priceMXN = Math.round(car.price * exchangeRate);
-            return carObj;
-        });
-
-        res.status(200).json({
-            success: true,
-            count: carsWithMXN.length,
-            total,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page,
-            data: carsWithMXN
-        });
-    } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error al obtener autos', 
-            error: error.message 
-        });
+        const cars = await Car.find(query).sort({ createdAt: -1 }); // Los más nuevos primero
+        res.json({ count: cars.length, data: cars });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error en el servidor al buscar autos');
     }
 };
 
-// 2. CREAR AUTO (POST) - Ahora incluye el campo "type"
-exports.createCar = async (req, res) => {
+// 2. OBTENER UN AUTO POR ID
+exports.getCarById = async (req, res) => {
     try {
-        // Agregamos "type" a la desestructuración del cuerpo
-        const { make, model, year, price, horsepower, type, description, images } = req.body;
-
-        let processedImages = [];
-        if (typeof images === 'string') {
-            processedImages = images.split(/[\n,]+/).map(url => url.trim()).filter(url => url !== '');
-        } else if (Array.isArray(images)) {
-            processedImages = images;
-        }
-
-        const newCar = await Car.create({
-            make, 
-            model, 
-            year, 
-            price, 
-            horsepower, 
-            type, // Guardamos la categoría (Cars, SUV, etc.)
-            description,
-            images: processedImages
-        });
-
-        res.status(201).json({ success: true, data: newCar });
-    } catch (error) {
-        res.status(400).json({ 
-            success: false, 
-            message: 'Error al crear auto', 
-            error: error.message 
-        });
+        const car = await Car.findById(req.params.id);
+        if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
+        res.json(car);
+    } catch (err) {
+        console.error(err);
+        if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'ID no válido' });
+        res.status(500).send('Error del servidor');
     }
 };
 
-// 3. ACTUALIZAR AUTO (PUT)
+// 3. CREAR UN AUTO (Con fotos)
+exports.createCar = async (req, res) => {
+    // Multer ya procesó las fotos antes de llegar aquí
+    try {
+        // Las rutas de las imágenes que guardó Multer
+        const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+
+        const newCar = new Car({
+            make: req.body.make,
+            model: req.body.model,
+            year: req.body.year,
+            price: req.body.price,
+            type: req.body.type,
+            description: req.body.description,
+            images: imagePaths, // Guardamos el array de rutas
+            isFeatured: req.body.isFeatured === 'true' // Convertir string a boolean
+        });
+
+        const car = await newCar.save();
+        res.json(car);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al guardar el auto');
+    }
+};
+
+// 4. ACTUALIZAR AUTO
 exports.updateCar = async (req, res) => {
     try {
-        let dataToUpdate = req.body;
+        let car = await Car.findById(req.params.id);
+        if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
 
-        if (dataToUpdate.images) {
-            let processedImages = [];
-            if (typeof dataToUpdate.images === 'string') {
-                processedImages = dataToUpdate.images.split(/[\n,]+/).map(url => url.trim()).filter(url => url !== '');
-            } else if (Array.isArray(dataToUpdate.images)) {
-                processedImages = dataToUpdate.images;
-            }
-            dataToUpdate.images = processedImages;
+        // Datos a actualizar
+        const { make, model, year, price, type, description, isFeatured } = req.body;
+        
+        // Si subieron fotos nuevas, las agregamos al array existente
+        let newImages = car.images;
+        if (req.files && req.files.length > 0) {
+            const uploadedPaths = req.files.map(file => `/uploads/${file.filename}`);
+            newImages = newImages.concat(uploadedPaths);
         }
 
-        const updatedCar = await Car.findByIdAndUpdate(req.params.id, dataToUpdate, {
-            new: true,
-            runValidators: true
-        });
+        // Objeto con los campos actualizados
+        const carFields = {
+            make, model, year, price, type, description,
+            isFeatured: isFeatured === 'true',
+            images: newImages
+        };
 
-        if (!updatedCar) {
-            return res.status(404).json({ success: false, message: 'Auto no encontrado' });
-        }
-
-        res.status(200).json({ success: true, data: updatedCar });
-    } catch (error) {
-        res.status(400).json({ 
-            success: false, 
-            message: 'Error al actualizar', 
-            error: error.message 
-        });
+        car = await Car.findByIdAndUpdate(req.params.id, { $set: carFields }, { new: true });
+        res.json(car);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al actualizar');
     }
 };
 
-// 4. ELIMINAR AUTO (DELETE)
+// 5. BORRAR AUTO (Y sus fotos)
 exports.deleteCar = async (req, res) => {
     try {
-        const car = await Car.findByIdAndDelete(req.params.id);
-        if (!car) {
-            return res.status(404).json({ success: false, message: 'Auto no encontrado' });
-        }
-        res.status(200).json({ success: true, message: 'Auto eliminado correctamente' });
-    } catch (error) {
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error al eliminar', 
-            error: error.message 
-        });
+        const car = await Car.findById(req.params.id);
+        if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
+
+        // (Opcional) Aquí podríamos borrar los archivos físicos de 'uploads' para ahorrar espacio
+        // car.images.forEach(imgPath => { ... borrar con fs.unlink ... })
+
+        await car.deleteOne();
+        res.json({ msg: 'Auto eliminado correctamente' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error al eliminar');
     }
 };
+
+// Exportamos el middleware de subida para usarlo en las rutas
+exports.uploadMiddleware = upload.array('images', 10); // Acepta hasta 10 fotos campo 'images'

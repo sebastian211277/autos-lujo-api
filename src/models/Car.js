@@ -1,70 +1,44 @@
 const mongoose = require('mongoose');
 
-const carSchema = new mongoose.Schema({
+const CarSchema = new mongoose.Schema({
     make: { 
         type: String, 
-        required: [true, 'La marca es obligatoria'], 
-        trim: true,
-        maxlength: [50, 'La marca no puede exceder los 50 caracteres']
+        required: true,
+        trim: true 
     },
     model: { 
         type: String, 
-        required: [true, 'El modelo es obligatorio'], 
-        trim: true,
-        maxlength: [50, 'El modelo no puede exceder los 50 caracteres']
+        required: true,
+        trim: true 
     },
     year: { 
         type: Number, 
-        required: [true, 'El año es obligatorio'],
-        min: [1886, 'El año no puede ser anterior a la invención del auto'], // Primer auto de Benz
-        max: [2027, 'No puedes registrar autos de un futuro tan lejano'] // Estamos en 2026
+        required: true 
     },
     price: { 
         type: Number, 
-        required: [true, 'El precio es obligatorio'],
-        min: [0, 'El precio no puede ser negativo']
+        required: true 
     },
-    horsepower: { 
-        type: Number, 
-        required: [true, 'Los caballos de fuerza son obligatorios'],
-        min: [0, 'Un auto no puede tener potencia negativa'],
-        max: [2500, 'Esa potencia parece irreal para un auto de producción']
-    },
-    images: { 
-        type: [String], 
-        validate: {
-            validator: function(v) {
-                return v.length <= 10; // Límite de 10 fotos por auto
-            },
-            message: 'No puedes subir más de 10 imágenes por vehículo'
-        }
-    },
-
-    // ... dentro de carSchema
     type: { 
         type: String, 
-        required: [true, 'El tipo de vehículo es obligatorio'],
-        enum: ['Cars', 'Pickups', 'SUV', 'Hybrid & Electric'] // Solo permite estos valores
+        required: true,
+        enum: ['Cars', 'SUV', 'Pickups', 'Hybrid & Electric'] // Categorías estrictas
     },
-// ...
-
-    // ... dentro de carSchema
-    type: { 
-        type: String, 
-        required: [true, 'El tipo de vehículo es obligatorio'],
-        enum: ['Cars', 'Pickups', 'SUV', 'Hybrid & Electric'] // Solo permite estos valores
-    },
-// ...
-
     description: { 
         type: String, 
-        trim: true,
-        maxlength: [2000, 'La descripción es demasiado larga']
+        required: false 
     },
-    createdAt: { 
-        type: Date, 
-        default: Date.now 
+    images: [{ 
+        type: String // Guardaremos rutas como "/uploads/ferrari-1.jpg"
+    }],
+    isFeatured: {
+        type: Boolean,
+        default: false // Por defecto, no sale en el carrusel principal
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 });
 
-module.exports = mongoose.model('Car', carSchema);
+module.exports = mongoose.model('Car', CarSchema);

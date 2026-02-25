@@ -3,250 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin | Luxury Garage</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Admin Dashboard | Luxury Garage</title>
     <style>
         :root {
             --bg-dark: #121213;
-            --card-bg: #1c1c1e;
+            --panel-gray: #1c1c1e;
             --gold: #d4af37;
-            --input-bg: #2c2c2e;
             --text-light: #f5f5f7;
         }
-
-        body { 
-            font-family: 'Inter', 'Segoe UI', sans-serif; 
-            padding: 20px; 
-            background: var(--bg-dark); 
-            color: var(--text-light);
-            max-width: 1100px; 
-            margin: 0 auto; 
-        }
-
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        h1 { font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
-
-        .form-container { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-light); margin: 0; padding: 20px; }
         
-        /* Estilo de Inputs */
-        input, textarea, select { 
-            width: 100%; padding: 12px; margin: 10px 0; 
-            border: 1px solid #444; border-radius: 6px; 
-            background: var(--input-bg); color: white; 
-            box-sizing: border-box; outline: none; transition: 0.3s;
+        /* Layout */
+        .dashboard { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        
+        /* Formulario */
+        .panel { background: var(--panel-gray); padding: 25px; border-radius: 12px; border: 1px solid #333; }
+        h2 { color: var(--gold); margin-top: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; }
+        
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333; 
+            color: white; border-radius: 6px; box-sizing: border-box; font-family: inherit;
         }
-        input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+        input:focus { border-color: var(--gold); outline: none; }
 
-        .btn { padding: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; width: 100%; margin-top: 15px; transition: 0.3s; }
-        .btn-success { background: var(--gold); color: black; }
-        .btn-success:hover { background: #b8972f; transform: translateY(-2px); }
-        .btn-logout { background: transparent; border: 1px solid #ff453a; color: #ff453a; width: auto; padding: 8px 20px; font-size: 0.8rem; }
-        .btn-logout:hover { background: #ff453a; color: white; }
+        /* Checkbox Destacado */
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #2c2c2e; padding: 10px; border-radius: 6px; }
+        .checkbox-group input { width: auto; margin: 0; }
+        
+        /* Botón Guardar */
+        .btn-save { width: 100%; background: var(--gold); color: black; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        .btn-save:hover { background: #b5952f; }
 
-        /* Galería de Previsualización */
-        #preview-container { 
-            display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0; 
-            padding: 20px; border: 1px dashed #555; border-radius: 8px; background: rgba(255,255,255,0.03); 
-        }
-        .preview-wrapper { position: relative; }
-        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #444; }
-        .badge { position: absolute; top: -8px; right: -8px; background: var(--gold); color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; font-size: 12px; line-height: 22px; font-weight: bold; }
+        /* Lista de Inventario */
+        .inventory-list { display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
+        .inventory-item { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 10px; border-radius: 6px; border-left: 3px solid #333; }
+        .inventory-item.featured { border-left-color: var(--gold); } /* Borde dorado si es destacado */
+        
+        .item-info { display: flex; gap: 15px; align-items: center; }
+        .item-thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
+        .btn-delete { background: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-        /* Lista de Autos */
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-top: 15px; display: flex; align-items: center; gap: 20px; border: 1px solid #333; }
-        .thumb { width: 100px; height: 60px; object-fit: cover; border-radius: 4px; }
-        .actions { margin-left: auto; display: flex; gap: 10px; }
-        .actions button { background: none; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; cursor: pointer; }
-        .actions .btn-del:hover { border-color: #ff453a; color: #ff453a; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Dashboard Luxury</h1>
-        <button class="btn btn-logout" onclick="logout()">Cerrar Sesión</button>
-    </div>
 
-    <div class="form-container">
-        <h3 id="formTitle" style="margin-top:0;">Gestión de Vehículo</h3>
-        <form id="carForm">
-            <input type="hidden" id="carId">
-            
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="make" placeholder="Marca (ej. Porsche)" required>
-                <input type="text" id="model" placeholder="Modelo (ej. 911 Turbo)" required>
-            </div>
+    <header style="margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px;">
+        <h1>Luxury Garage <span style="color:var(--gold)">Manager</span></h1>
+    </header>
 
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="year" placeholder="Año" required>
-                <input type="number" id="horsepower" placeholder="HP" required>
-                <select id="type" required>
-                    <option value="" disabled selected>Tipo de Vehículo</option>
-                    <option value="Cars">Cars</option>
-                    <option value="Pickups">Pickups</option>
+    <div class="dashboard">
+        <div class="panel">
+            <h2>Agregar Nuevo Vehículo</h2>
+            <form id="carForm">
+                <input type="text" id="make" placeholder="Marca (Ej: Porsche)" required>
+                <input type="text" id="model" placeholder="Modelo (Ej: 911 GT3)" required>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <input type="number" id="year" placeholder="Año" required>
+                    <input type="number" id="price" placeholder="Precio (USD)" required>
+                </div>
+
+                <select id="type">
+                    <option value="Cars">Cars (Deportivos/Sedan)</option>
                     <option value="SUV">SUV</option>
+                    <option value="Pickups">Pickups</option>
                     <option value="Hybrid & Electric">Hybrid & Electric</option>
                 </select>
-            </div>
-            
-            <input type="number" id="price" placeholder="Precio en USD" required>
 
-            <label style="font-weight:bold; margin-top:15px; display:block;">Carga de Medios:</label>
-            <input type="file" id="imageInput" multiple accept="image/*" onchange="handleFiles()">
-            
-            <div id="preview-container">
-                <p style="color:#666; font-size:0.9rem; margin:auto;">Sin archivos seleccionados</p>
-            </div>
+                <textarea id="description" rows="4" placeholder="Descripción detallada..."></textarea>
 
-            <textarea id="description" rows="4" placeholder="Especificaciones y detalles del vehículo..."></textarea>
-            
-            <button type="submit" id="submitBtn" class="btn btn-success">Guardar en Inventario</button>
-            <button type="button" onclick="resetForm()" class="btn" style="background:#444; display:none;" id="cancelBtn">Cancelar</button>
-        </form>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isFeatured">
+                    <label for="isFeatured">🏆 Destacar en Portada (Hero Section)</label>
+                </div>
+
+                <label style="display:block; margin-bottom:5px; color:#aaa;">Fotografías (Máx 10)</label>
+                <input type="file" id="images" multiple accept="image/*" required>
+
+                <button type="submit" class="btn-save">Guardar en Inventario</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h2>Inventario Actual</h2>
+            <div id="inventoryList" class="inventory-list">
+                <p style="color:#666">Cargando inventario...</p>
+            </div>
+        </div>
     </div>
 
-    <div id="carsList" style="margin-top:40px; padding-bottom: 50px;">
-        <h4 style="border-bottom: 1px solid #333; padding-bottom: 10px;">Inventario Actual</h4>
-    </div>
-
-    <script>
-        // const token = localStorage.getItem('token');
-        // if (!token) window.location.href = '/login.html';
-
-        let finalImages = []; 
-
-        const compressImage = (file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1000; 
-                        const scaleSize = MAX_WIDTH / img.width;
-                        if (scaleSize >= 1) { resolve(event.target.result); return; }
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                };
-            });
-        };
-
-        async function handleFiles() {
-            const input = document.getElementById('imageInput');
-            const container = document.getElementById('preview-container');
-            if (!input.files.length) return;
-            container.innerHTML = '<p style="color:var(--gold);">Comprimiendo...</p>';
-            const compressPromises = Array.from(input.files).map(file => compressImage(file));
-            finalImages = await Promise.all(compressPromises);
-            renderPreview();
-        }
-
-        function renderPreview() {
-            const container = document.getElementById('preview-container');
-            container.innerHTML = finalImages.length ? '' : '<p style="color:#666;">Sin archivos seleccionados</p>';
-            finalImages.forEach((imgSrc, index) => {
-                container.innerHTML += `<div class="preview-wrapper"><img src="${imgSrc}" class="preview-img"><div class="badge">${index + 1}</div></div>`;
-            });
-        }
-
-        document.getElementById('carForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true; btn.innerText = "Sincronizando...";
-
-            const id = document.getElementById('carId').value;
-            const carData = {
-                make: document.getElementById('make').value,
-                model: document.getElementById('model').value,
-                year: document.getElementById('year').value,
-                price: document.getElementById('price').value,
-                horsepower: document.getElementById('horsepower').value,
-                type: document.getElementById('type').value, // <--- CAMBIO CLAVE: Captura el tipo
-                description: document.getElementById('description').value,
-                images: finalImages
-            };
-
-            try {
-                const res = await fetch(id ? `/api/cars/${id}` : '/api/cars', {
-                    method: id ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                    body: JSON.stringify(carData)
-                });
-                if (res.ok) {
-                    Swal.fire('Éxito', 'Base de datos actualizada', 'success');
-                    resetForm(); loadCars();
-                } else {
-                    const err = await res.json();
-                    Swal.fire('Error', err.message, 'error');
-                }
-            } catch (error) { Swal.fire('Error', 'Falla de red', 'error'); }
-            finally { btn.disabled = false; btn.innerText = "Guardar en Inventario"; }
-        });
-
-        async function loadCars() {
-            const res = await fetch('/api/cars?limit=100');
-            const response = await res.json();
-            const list = document.getElementById('carsList');
-            list.innerHTML = '<h4 style="border-bottom: 1px solid #333; padding-bottom: 10px;">Inventario Actual</h4>';
-            response.data.forEach(car => {
-                const carStr = JSON.stringify(car).replace(/'/g, "&#39;");
-                list.innerHTML += `
-                    <div class="card">
-                        <img src="${car.images[0] || ''}" class="thumb">
-                        <div>
-                            <b>${car.make} ${car.model}</b><br>
-                            <small style="color:var(--gold)">${car.type} | ${car.year}</small>
-                        </div>
-                        <div class="actions">
-                            <button onclick='editCar(${carStr})'>✏️</button>
-                            <button class="btn-del" onclick="deleteCar('${car._id}')">🗑️</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function editCar(car) {
-            document.getElementById('formTitle').innerText = "Editando " + car.model;
-            document.getElementById('carId').value = car._id;
-            document.getElementById('make').value = car.make;
-            document.getElementById('model').value = car.model;
-            document.getElementById('year').value = car.year;
-            document.getElementById('horsepower').value = car.horsepower;
-            document.getElementById('price').value = car.price;
-            document.getElementById('type').value = car.type; // <--- Carga el tipo al editar
-            document.getElementById('description').value = car.description || '';
-            finalImages = car.images || [];
-            renderPreview();
-            document.getElementById('btnSave'); 
-            document.getElementById('cancelBtn').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function deleteCar(id) {
-            const res = await Swal.fire({ title: '¿Eliminar?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff453a' });
-            if (res.isConfirmed) {
-                await fetch(`/api/cars/${id}`, { method: 'DELETE', headers: {'x-auth-token':token} });
-                loadCars();
-            }
-        }
-
-        function resetForm() {
-            document.getElementById('carForm').reset();
-            document.getElementById('carId').value = '';
-            finalImages = [];
-            renderPreview();
-            document.getElementById('cancelBtn').style.display = "none";
-            document.getElementById('formTitle').innerText = "Gestión de Vehículo";
-        }
-
-        function logout() { localStorage.removeItem('token'); window.location.href='/login.html'; }
-        loadCars();
-    </script>
+    <script src="js/admin.js"></script>
 </body>
 </html>

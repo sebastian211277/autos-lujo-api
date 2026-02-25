@@ -1,38 +1,29 @@
 require('dotenv').config();
 const express = require('express');
+const connectDB = require('./src/config/database');
 const cors = require('cors');
-const path = require('path'); // <--- 1. IMPORTANTE: Agregamos esto
-const connectDB = require('./config/database');
+const path = require('path');
 
-// Inicializar la app
+// Inicializar App
 const app = express();
 
-// Conectar DB
+// Conectar Base de Datos
 connectDB();
 
-// Middlewares
+// Middleware (Configuración de seguridad y datos)
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ extended: false })); // Para recibir JSON
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// IMPORTANTE: Servir archivos estáticos (Frontend y Fotos)
+// 1. La carpeta 'public' contiene el HTML, CSS y JS
+app.use(express.static('public'));
+// 2. La carpeta 'uploads' contiene las fotos de los autos
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// 2. IMPORTANTE: Configuración BLINDADA de la carpeta pública 🛡️
-// Le decimos: "Desde donde estoy (__dirname), sube un nivel (..) y busca 'public'"
-app.use(express.static(path.join(__dirname, '../public')));
+// Definir Rutas de la API (Las crearemos en el siguiente paso)
+app.use('/api/cars', require('./src/routes/carRoutes'));
 
-// Rutas API
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/cars', require('./routes/carRoutes'));
+// Puerto de salida
+const PORT = process.env.PORT || 5000;
 
-// Ruta Principal (Si entran a la raíz, enviamos el index.html)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Definir Puerto
-const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Servidor Luxury Garage corriendo en el puerto ${PORT}`));
