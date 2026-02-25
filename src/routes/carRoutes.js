@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const carController = require('../controllers/carController');
-const auth = require('../middleware/authMiddleware');
 
+// --- RUTAS PÚBLICAS ---
 router.get('/', carController.getCars);
 
+router.get('/:id', carController.getCarById); 
 
-router.post('/', auth, carController.createCar);
-router.put('/:id', auth, carController.updateCar);
-router.delete('/:id', auth, carController.deleteCar);
+// --- RUTAS DE ADMIN (Ya sin auth) ---
+router.post('/', carController.createCar);
+router.put('/:id', carController.updateCar);
+router.delete('/:id', carController.deleteCar);
 
 module.exports = router;
