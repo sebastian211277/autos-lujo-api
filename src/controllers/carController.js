@@ -38,16 +38,15 @@ exports.getCars = async (req, res) => {
         const { type, featured } = req.query;
         let query = {};
 
-        // Si la URL dice ?type=SUV, filtramos por SUV
         if (type) query.type = type;
-        // Si la URL dice ?featured=true, filtramos los destacados
-        if (featured) query.isFeatured = true;
+        // IMPORTANTE: Asegúrate de que esta comparación sea segura
+        if (featured === 'true') query.isFeatured = true;
 
-        const cars = await Car.find(query).sort({ createdAt: -1 }); // Los más nuevos primero
-        res.json({ count: cars.length, data: cars });
+        const cars = await Car.find(query).sort({ createdAt: -1 });
+        res.json({ count: cars.length, data: cars }); // Verifica que envíes un objeto con 'data'
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Error en el servidor al buscar autos');
+        console.error("❌ Error en getCars:", err);
+        res.status(500).json({ msg: 'Error al obtener los autos' });
     }
 };
 
