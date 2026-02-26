@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
-const URI = "mongodb+srv://shyrio:Mongo4life77@cluster0.xxxxx.mongodb.net/luxury-cars?retryWrites=true&w=majority";
+// Le agregamos "luxury-cars" antes del signo de interrogación
+const URI = "mongodb+srv://shyrio:Mongo4life77@cluster0autos.r6qhume.mongodb.net/luxury-cars?retryWrites=true&w=majority";
 
 const connectDB = async () => {
 try {
@@ -8,7 +9,7 @@ try {
     console.log('✅ MongoDB Conectado exitosamente');
 } catch (err) {
     console.error('❌ Error de conexión:', err.message);
-    process.exit(1);
+    // No cerramos el proceso para que el servidor no se muera
 }
 };
 

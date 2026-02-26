@@ -17,7 +17,7 @@ app.use(express.static('public'));
 app.use('/api/cars', require('./src/routes/carRoutes'));
 
 // EL PUERTO: Si el .env falla, usamos el 3000 a la fuerza para Nginx
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 app.listen(PORT, () => {
     console.log(`🚀 SERVIDOR ACTIVO EN PUERTO: ${PORT}`);
