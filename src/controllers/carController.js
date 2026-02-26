@@ -43,7 +43,7 @@ exports.getCars = async (req, res) => {
         if (featured === 'true') query.isFeatured = true;
 
         const cars = await Car.find(query).sort({ createdAt: -1 });
-        res.json({ count: cars.length, data: cars }); // Verifica que envíes un objeto con 'data'
+res.json({ data: cars }); // Verifica que envíes un objeto con 'data'
     } catch (err) {
         console.error("❌ Error en getCars:", err);
         res.status(500).json({ msg: 'Error al obtener los autos' });

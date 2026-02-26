@@ -20,23 +20,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function fetchCars() {
     try {
         const res = await fetch('/api/cars');
+        if (!res.ok) throw new Error('Error en la respuesta del servidor'); // Maneja el 502
+        
         const response = await res.json();
-        allCars = response.data;
-
-        // Filtramos los que tienen 'isFeatured: true' para el carrusel
+        
+        // Validamos que response.data exista y sea un array
+        allCars = Array.isArray(response.data) ? response.data : [];
+        
+        // ... resto de tu lógica de filtrado ...
         featuredCars = allCars.filter(car => car.isFeatured === true);
         
-        // Si no marcaste ninguno, usamos los primeros 3 para que no se vea vacío
-        if (featuredCars.length === 0 && allCars.length > 0) {
-            featuredCars = allCars.slice(0, 3);
-        }
-
-        // Arrancamos el carrusel y pintamos la grilla
-        startHeroSlider();
-        renderGrid(allCars);
-
     } catch (error) {
-        console.error("Error conectando:", error);
+        console.error("❌ Error al cargar autos:", error);
+        allCars = []; // Evita que el código truene si hay error
     }
 }
 
