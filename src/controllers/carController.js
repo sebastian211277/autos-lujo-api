@@ -6,13 +6,8 @@ const fs = require('fs');
 // --- CONFIGURACIÓN DE MULTER (Subida de Imágenes) ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Usamos path.join y __dirname para asegurar que la ruta sea absoluta
-        const dest = path.join(__dirname, '../../public/uploads/');
-        
-        // Verificamos si la carpeta existe, si no, la crea
-        if (!fs.existsSync(dest)) {
-            fs.mkdirSync(dest, { recursive: true });
-        }
+        // Usamos una ruta absoluta directa para evitar confusiones de carpetas
+        const dest = '/home/shyrio/autos-lujo-api/public/uploads/';
         cb(null, dest);
     },
     filename: function (req, file, cb) {

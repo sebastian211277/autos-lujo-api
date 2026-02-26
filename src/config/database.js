@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // Le agregamos "luxury-cars" antes del signo de interrogación
-const URI = "mongodb+srv://shyrio:Mongo4life77@cluster0autos.r6qhume.mongodb.net/luxury-cars?retryWrites=true&w=majority";
+const URI = "mongodb://shyrio:Mongo4life77@cluster0autos.r6qhume.mongodb.net/luxury-cars?retryWrites=true&w=majority";
 
 const connectDB = async () => {
 try {
