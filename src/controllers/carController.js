@@ -6,10 +6,16 @@ const fs = require('fs');
 // --- CONFIGURACIÓN DE MULTER (Subida de Imágenes) ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/uploads/'); // Carpeta donde caen las fotos
+        // Usamos path.join y __dirname para asegurar que la ruta sea absoluta
+        const dest = path.join(__dirname, '../../public/uploads/');
+        
+        // Verificamos si la carpeta existe, si no, la crea
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        cb(null, dest);
     },
     filename: function (req, file, cb) {
-        // Genera nombre único: 'porsche-911-174050923.jpg'
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
