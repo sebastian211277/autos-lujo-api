@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const URI = "mongodb+srv://shyrio:Password123@cluster0.xxxxx.mongodb.net/luxury-cars?retryWrites=true&w=majority";
 
 const connectDB = async () => {
