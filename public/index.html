@@ -34,7 +34,32 @@
     </section>
 
     <div style="background:#111; padding:30px; display:flex; justify-content:center; gap:40px; flex-wrap:wrap;">
-        <span style="color:#444; font-size:0.9rem;">FILTRAR POR MARCA (Próximamente)</span>
+        <section style="padding: 40px 20px; background: #111; text-align: center;">
+    <h2 style="color: #fff; margin-bottom: 30px; font-family: 'Playfair Display', serif;">EXPLORA POR MARCA</h2>
+    
+    <div class="brand-container">
+        <div class="brand-item" onclick="filterByMake('all')">
+            <span style="color: white; font-weight: bold; font-size: 1.2rem;">TODAS</span>
+        </div>
+
+        <div class="brand-item" onclick="filterByMake('Ferrari')">
+            <img src="/images/logos/ferrari.png" alt="Ferrari">
+        </div>
+
+        <div class="brand-item" onclick="filterByMake('Porsche')">
+            <img src="/images/logos/porsche.png" alt="Porsche">
+        </div>
+
+        <div class="brand-item" onclick="filterByMake('Lamborghini')">
+            <img src="/images/logos/lamborghini.png" alt="Lamborghini">
+        </div>
+
+        <div class="brand-item" onclick="filterByMake('Mercedes-Benz')">
+            <img src="/images/logos/mercedes.png" alt="Mercedes">
+        </div>
+        
+        </div>
+</section>
     </div>
 
     <div class="container">

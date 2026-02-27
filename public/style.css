@@ -90,6 +90,46 @@ header {
     animation: shine 4s linear infinite;
 }
 
+/* Contenedor flexible para los logos */
+.brand-container {
+    display: flex;
+    justify-content: center; /* Centrados en pantalla grande */
+    gap: 30px;
+    flex-wrap: wrap; /* Si no caben, bajan a la siguiente línea */
+    align-items: center;
+}
+
+/* Estilo de cada logo */
+.brand-item {
+    cursor: pointer;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    opacity: 0.7; /* Un poco apagados por defecto */
+}
+
+/* Efecto Hover: Se iluminan y crecen */
+.brand-item:hover {
+    transform: scale(1.1); /* Crecen un 10% */
+    opacity: 1; /* Se vuelven totalmente visibles */
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)); /* Brillo dorado */
+}
+
+/* Tamaño de las imágenes */
+.brand-item img {
+    height: 60px; /* Altura fija para que todos se vean uniformes */
+    width: auto;
+    object-fit: contain;
+}
+
+/* Ajuste para móviles (Scroll horizontal si son muchos) */
+@media (max-width: 768px) {
+    .brand-container {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        white-space: nowrap;
+    }
+}
+
 @keyframes shine {
     to { background-position: 200% center; }
 }

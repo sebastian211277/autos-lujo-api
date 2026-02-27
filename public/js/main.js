@@ -9,7 +9,8 @@ const heroBg = document.getElementById('heroBg');
 const heroTitle = document.getElementById('heroTitle');
 const heroPrice = document.getElementById('heroPrice');
 const heroDesc = document.getElementById('heroDesc');
-const heroContent = document.getElementById('heroContent');
+// Agregamos una referencia al contenedor de acciones del Hero (si existe) o al content
+const heroContent = document.getElementById('heroContent'); 
 
 // INICIAR
 document.addEventListener('DOMContentLoaded', async () => {
@@ -20,23 +21,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function fetchCars() {
     try {
         const res = await fetch('/api/cars');
-        if (!res.ok) throw new Error('Error en la respuesta del servidor'); // Maneja el 502
+        if (!res.ok) throw new Error('Error en la respuesta del servidor'); 
         
         const response = await res.json();
         
-        // Validamos que response.data exista y sea un array
+        // Validación de seguridad de datos
         allCars = Array.isArray(response.data) ? response.data : [];
         
-        // ... resto de tu lógica de filtrado ...
+        // Filtramos destacados para el carrusel
         featuredCars = allCars.filter(car => car.isFeatured === true);
-        
+
+        // Renderizamos la página
+        renderGrid(allCars);
+        startHeroSlider(); // <--- IMPORTANTE: Iniciamos el carrusel aquí
+
     } catch (error) {
         console.error("❌ Error al cargar autos:", error);
-        allCars = []; // Evita que el código truene si hay error
+        allCars = [];
+        grid.innerHTML = '<p class="text-center">Hubo un error al cargar el inventario.</p>';
     }
 }
 
-// 2. RENDERIZAR GRID (Tarjetas)
+// 2. RENDERIZAR GRID (Tarjetas de abajo)
 function renderGrid(cars) {
     grid.innerHTML = '';
     
@@ -49,8 +55,7 @@ function renderGrid(cars) {
         const card = document.createElement('div');
         card.className = 'card';
         
-        // --- AQUÍ ESTÁ EL FIX DEL CLICK ---
-        // Ahora sí llamamos a la función del modal
+        // --- AQUÍ CONECTAMOS EL CLIC DE LA TARJETA AL MODAL ---
         card.onclick = () => showCarDetails(car._id); 
 
         const img = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/400';
@@ -69,14 +74,14 @@ function renderGrid(cars) {
     });
 }
 
-// 3. LÓGICA DEL CARRUSEL (HERO)
+// 3. LÓGICA DEL CARRUSEL (HERO) - Aquí agregamos el botón dinámico
 function startHeroSlider() {
     if (featuredCars.length === 0) return;
 
     // Mostrar el primero inmediatamente
     updateHero(featuredCars[0]);
 
-    // Si solo hay un auto destacado, no rotamos para evitar parpadeos raros
+    // Si solo hay un auto destacado, no rotamos
     if (featuredCars.length === 1) return;
 
     // Cambiar cada 5 segundos
@@ -91,23 +96,66 @@ function updateHero(car) {
     if (!car) return;
 
     // Animación de salida (Fade Out)
-    heroContent.classList.remove('active');
+    // Asumimos que heroContent es el contenedor del texto
+    heroContent.style.opacity = '0';
     
     setTimeout(() => {
-        // Cambiar datos
+        // 1. Actualizar Imagen de Fondo
         if(car.images && car.images.length > 0) {
             heroBg.style.backgroundImage = `url('${car.images[0]}')`;
         }
-        heroTitle.innerText = `${car.make} ${car.model}`;
-        heroPrice.innerText = `$${Number(car.price).toLocaleString()}`;
-        heroDesc.innerText = car.description ? car.description.substring(0, 100) + '...' : 'Experiencia de lujo.';
+        
+        // 2. Inyectar HTML con los datos Y EL BOTÓN CONECTADO
+        // Nota: Usamos innerHTML para reescribir título, precio, descripción y botón a la vez
+        heroContent.innerHTML = `
+            <h1 id="heroTitle" style="font-family: 'Playfair Display', serif; font-size: 3.5rem; margin-bottom: 10px;">
+                ${car.make} ${car.model}
+            </h1>
+            <p id="heroPrice" style="font-size: 2rem; color: var(--gold); margin-bottom: 20px;">
+                $${Number(car.price).toLocaleString()}
+            </p>
+            <p id="heroDesc" style="font-size: 1.1rem; color: #ccc; max-width: 600px; margin: 0 auto 30px auto;">
+                ${car.description ? car.description.substring(0, 100) + '...' : 'Experiencia de lujo.'}
+            </p>
+            
+            <button class="btn-primary" style="padding: 15px 30px; font-size: 1rem; cursor: pointer; background: var(--gold); border: none; font-weight: bold;" 
+                onclick="showCarDetails('${car._id}')">
+                VER DETALLES
+            </button>
+        `;
 
         // Animación de entrada (Fade In)
-        heroContent.classList.add('active');
+        heroContent.style.opacity = '1';
+        heroContent.style.transition = 'opacity 0.5s ease-in-out';
     }, 500);
 }
 
-// 4. VENTANA MODAL (DETALLES AL HACER CLICK)
+// 6. FILTRADO POR MARCA (LOGOS)
+function filterByMake(make) {
+    const gridTitle = document.getElementById('gridTitle'); // Asegúrate de tener este ID en tu HTML (h2 del inventario)
+    
+    // Si seleccionan "TODAS" o "all"
+    if (make === 'all') {
+        renderGrid(allCars);
+        if(gridTitle) gridTitle.innerText = 'Inventario Completo';
+        return;
+    }
+
+    // Filtramos usando .filter()
+    // Convertimos a minúsculas para evitar errores (Ferrari vs ferrari)
+    const filtered = allCars.filter(car => car.make.toLowerCase() === make.toLowerCase());
+    
+    // Renderizamos los resultados
+    renderGrid(filtered);
+    
+    // Actualizamos el título para dar feedback al usuario
+    if(gridTitle) gridTitle.innerText = `Colección ${make}`;
+}
+
+// Hacemos la función global si usas módulos
+window.filterByMake = filterByMake;
+
+// 4. VENTANA MODAL (DETALLES) - Funciona para Grid y Carrusel
 async function showCarDetails(id) {
     try {
         // Pedimos los detalles completos al servidor
@@ -170,7 +218,6 @@ async function showCarDetails(id) {
         `;
 
         document.body.appendChild(modal);
-        // Pequeño delay para la animación de entrada
         setTimeout(() => modal.style.opacity = '1', 10);
 
         modal.onclick = (e) => {
@@ -182,9 +229,11 @@ async function showCarDetails(id) {
     }
 }
 
-// 5. FILTROS DEL MENÚ
+// 5. FILTROS DEL MENÚ (Opcional, si tienes botones de filtro en HTML)
 function filterCars(type) {
-    document.getElementById('gridTitle').innerText = type ? `${type} Inventory` : 'Inventario Completo';
+    const titleElement = document.getElementById('gridTitle');
+    if(titleElement) titleElement.innerText = type ? `${type} Inventory` : 'Inventario Completo';
+    
     if (!type) {
         renderGrid(allCars);
     } else {

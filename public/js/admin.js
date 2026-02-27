@@ -1,109 +1,119 @@
-const form = document.getElementById('carForm');
-const inventoryList = document.getElementById('inventoryList');
+let allCars = [];
+let editId = null; // Variable clave: Si es null, estamos CREANDO. Si tiene ID, estamos EDITANDO.
 
-// 1. CARGAR INVENTARIO AL INICIAR
-document.addEventListener('DOMContentLoaded', loadInventory);
+const carForm = document.getElementById('carForm');
+const btnSubmit = document.getElementById('btnSubmit');
+const btnCancel = document.getElementById('btnCancel');
 
-// 2. FUNCIÓN PARA ENVIAR EL FORMULARIO (NUEVA LÓGICA DE FOTOS)
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// 1. CARGAR AUTOS EN LA TABLA
+async function fetchCars() {
+    const res = await fetch('/api/cars');
+    const response = await res.json();
+    allCars = response.data || []; 
+    renderTable(allCars);
+}
 
-    // Usamos FormData para empaquetar texto + archivos
-    const formData = new FormData();
-    formData.append('make', document.getElementById('make').value);
-    formData.append('model', document.getElementById('model').value);
-    formData.append('year', document.getElementById('year').value);
-    formData.append('price', document.getElementById('price').value);
-    formData.append('type', document.getElementById('type').value);
-    formData.append('description', document.getElementById('description').value);
+// 2. RENDERIZAR TABLA CON BOTÓN DE EDITAR
+function renderTable(cars) {
+    const tbody = document.querySelector('#carsTable tbody'); // Asegúrate que tu tabla tenga este ID
+    tbody.innerHTML = '';
+
+    cars.forEach(car => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><img src="${car.images[0] || ''}" width="50"></td>
+            <td>${car.make} ${car.model}</td>
+            <td>${car.year}</td>
+            <td>$${car.price}</td>
+            <td>
+                <button onclick="cargarParaEditar('${car._id}')" style="background: #f1c40f; color: black; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px;">
+                    ✏️ Editar
+                </button>
+                
+                <button onclick="deleteCar('${car._id}')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; margin-left: 5px;">
+                    🗑️ Eliminar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 3. FUNCIÓN PARA LLENAR EL FORMULARIO (Modo Edición)
+window.cargarParaEditar = function(id) {
+    const car = allCars.find(c => c._id === id);
+    if (!car) return;
+
+    // Llenamos los inputs con los datos actuales
+    document.getElementById('make').value = car.make;
+    document.getElementById('model').value = car.model;
+    document.getElementById('year').value = car.year;
+    document.getElementById('price').value = car.price;
+    document.getElementById('type').value = car.type;
+    document.getElementById('description').value = car.description || '';
     
-    // El checkbox envía "true" o "false"
-    formData.append('isFeatured', document.getElementById('isFeatured').checked);
+    // Checkbox de destacado
+    const featuredCheck = document.getElementById('isFeatured');
+    if(featuredCheck) featuredCheck.checked = car.isFeatured;
 
-    // Adjuntar las imágenes (pueden ser varias)
-    const fileInput = document.getElementById('images');
-    for (let i = 0; i < fileInput.files.length; i++) {
-        formData.append('images', fileInput.files[i]);
-    }
+    // CAMBIAMOS EL ESTADO VISUAL
+    editId = id; // Guardamos el ID que estamos editando
+    btnSubmit.innerText = "Actualizar Auto";
+    btnSubmit.style.background = "#f1c40f"; // Color amarillo para indicar edición
+    btnSubmit.style.color = "black";
+    btnCancel.style.display = "inline-block"; // Mostramos botón cancelar
+
+    // Scroll hacia arriba para ver el formulario
+    document.getElementById('carForm').scrollIntoView({ behavior: 'smooth' });
+};
+
+// 4. FUNCIÓN PARA CANCELAR EDICIÓN
+window.resetForm = function() {
+    carForm.reset();
+    editId = null;
+    btnSubmit.innerText = "Guardar Auto";
+    btnSubmit.style.background = ""; // Regresa al color original (CSS)
+    btnSubmit.style.color = "";
+    btnCancel.style.display = "none";
+};
+
+// 5. MANEJO DEL ENVÍO (POST vs PUT)
+carForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(carForm);
+    
+    // Convertir el checkbox a true/false manualmente si es necesario
+    const isFeatured = document.getElementById('isFeatured').checked;
+    formData.set('isFeatured', isFeatured);
 
     try {
-        const res = await fetch('/api/cars', {
-            method: 'POST',
-            body: formData // NOTA: No llevamos Header JSON aquí, el navegador lo pone solo
+        let url = '/api/cars';
+        let method = 'POST';
+
+        // SI ESTAMOS EN MODO EDICIÓN:
+        if (editId) {
+            url = `/api/cars/${editId}`;
+            method = 'PUT';
+        }
+
+        const res = await fetch(url, {
+            method: method,
+            body: formData
         });
 
         if (res.ok) {
-            alert('¡Vehículo guardado exitosamente!');
-            form.reset(); // Limpiar formulario
-            loadInventory(); // Recargar la lista
+            alert(editId ? '¡Auto actualizado!' : '¡Auto creado!');
+            resetForm(); // Limpia y resetea el modo
+            fetchCars(); // Recarga la tabla
         } else {
-            const error = await res.text();
-            alert('Error al guardar: ' + error);
+            alert('Error al guardar');
         }
-    } catch (err) {
-        console.error(err);
-        alert('Falla de conexión con el servidor');
+    } catch (error) {
+        console.error(error);
+        alert('Error de conexión');
     }
 });
 
-// 3. FUNCIÓN PARA CARGAR Y MOSTRAR LA LISTA
-async function loadInventory() {
-    inventoryList.innerHTML = '<p style="color:#aaa">Actualizando...</p>';
-    
-    try {
-        const res = await fetch('/api/cars'); // Pide todos los autos
-        const response = await res.json();
-        const cars = response.data;
-
-        inventoryList.innerHTML = ''; // Limpiar lista
-
-        if (cars.length === 0) {
-            inventoryList.innerHTML = '<p>Inventario vacío.</p>';
-            return;
-        }
-
-        cars.forEach(car => {
-            // Elegir foto principal o una por defecto
-            const thumb = (car.images && car.images.length > 0) 
-                ? car.images[0] 
-                : 'https://via.placeholder.com/100';
-
-            const item = document.createElement('div');
-            // Si es destacado, le ponemos la clase 'featured' para el borde dorado
-            item.className = `inventory-item ${car.isFeatured ? 'featured' : ''}`;
-            
-            item.innerHTML = `
-                <div class="item-info">
-                    <img src="${thumb}" class="item-thumb">
-                    <div>
-                        <div style="font-weight:bold; color:white;">${car.make} ${car.model}</div>
-                        <div style="font-size:0.8rem; color:#aaa;">$${car.price.toLocaleString()} | ${car.year}</div>
-                        ${car.isFeatured ? '<span style="color:#d4af37; font-size:0.7rem;">★ PORTADA</span>' : ''}
-                    </div>
-                </div>
-                <button class="btn-delete" onclick="deleteCar('${car._id}')">🗑️</button>
-            `;
-            inventoryList.appendChild(item);
-        });
-
-    } catch (err) {
-        console.error(err);
-        inventoryList.innerHTML = '<p style="color:red">Error cargando inventario</p>';
-    }
-}
-
-// 4. FUNCIÓN PARA BORRAR
-async function deleteCar(id) {
-    if(!confirm('¿Estás seguro de borrar este auto?')) return;
-
-    try {
-        const res = await fetch(`/api/cars/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            loadInventory(); // Recargar lista
-        } else {
-            alert('No se pudo borrar');
-        }
-    } catch (err) {
-        console.error(err);
-    }
-}
+// Inicializar
+document.addEventListener('DOMContentLoaded', fetchCars);
