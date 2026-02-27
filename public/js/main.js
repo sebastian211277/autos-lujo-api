@@ -6,10 +6,9 @@ let heroInterval;
 // ELEMENTOS DOM
 const grid = document.getElementById('grid');
 const heroBg = document.getElementById('heroBg');
-const heroTitle = document.getElementById('heroTitle');
-const heroPrice = document.getElementById('heroPrice');
-const heroDesc = document.getElementById('heroDesc');
-// Agregamos una referencia al contenedor de acciones del Hero (si existe) o al content
+// const heroTitle = document.getElementById('heroTitle'); // Ya no se usa directamente, se inyecta
+// const heroPrice = document.getElementById('heroPrice'); // Ya no se usa directamente, se inyecta
+// const heroDesc = document.getElementById('heroDesc');   // Ya no se usa directamente, se inyecta
 const heroContent = document.getElementById('heroContent'); 
 
 // INICIAR
@@ -26,28 +25,42 @@ async function fetchCars() {
         const response = await res.json();
         
         // Validación de seguridad de datos
-        allCars = Array.isArray(response.data) ? response.data : [];
+        // Si la respuesta no tiene .data (formato viejo), intentamos usar response directo si es array
+        if (response.data && Array.isArray(response.data)) {
+            allCars = response.data;
+        } else if (Array.isArray(response)) {
+            console.warn("Recibiendo formato antiguo (array directo). Se recomienda actualizar backend.");
+            allCars = response;
+        } else {
+            allCars = [];
+        }
         
         // Filtramos destacados para el carrusel
         featuredCars = allCars.filter(car => car.isFeatured === true);
 
+        // Si no hay destacados, usamos los primeros 3 para que el carrusel no esté vacío
+        if (featuredCars.length === 0 && allCars.length > 0) {
+            featuredCars = allCars.slice(0, 3);
+        }
+
         // Renderizamos la página
         renderGrid(allCars);
-        startHeroSlider(); // <--- IMPORTANTE: Iniciamos el carrusel aquí
+        startHeroSlider(); 
 
     } catch (error) {
         console.error("❌ Error al cargar autos:", error);
         allCars = [];
-        grid.innerHTML = '<p class="text-center">Hubo un error al cargar el inventario.</p>';
+        if(grid) grid.innerHTML = '<p class="text-center" style="color: white;">Hubo un error al cargar el inventario. Intenta refrescar la página.</p>';
     }
 }
 
 // 2. RENDERIZAR GRID (Tarjetas de abajo)
 function renderGrid(cars) {
+    if(!grid) return; // Protección si grid no existe
     grid.innerHTML = '';
     
     if (!cars || cars.length === 0) {
-        grid.innerHTML = '<p style="color:#aaa; text-align:center;">No hay vehículos disponibles.</p>';
+        grid.innerHTML = '<p style="color:#aaa; text-align:center; width:100%;">No hay vehículos disponibles con estos filtros.</p>';
         return;
     }
 
@@ -58,10 +71,10 @@ function renderGrid(cars) {
         // --- AQUÍ CONECTAMOS EL CLIC DE LA TARJETA AL MODAL ---
         card.onclick = () => showCarDetails(car._id); 
 
-        const img = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/400';
+        const img = (car.images && car.images.length > 0) ? car.images[0] : 'https://via.placeholder.com/400x300?text=Sin+Foto';
 
         card.innerHTML = `
-            <img src="${img}" class="card-img" alt="${car.model}">
+            <img src="${img}" class="card-img" alt="${car.model}" loading="lazy">
             <div class="card-body">
                 <h3 class="card-title">${car.make} ${car.model}</h3>
                 <div class="card-meta">
@@ -74,7 +87,7 @@ function renderGrid(cars) {
     });
 }
 
-// 3. LÓGICA DEL CARRUSEL (HERO) - Aquí agregamos el botón dinámico
+// 3. LÓGICA DEL CARRUSEL (HERO)
 function startHeroSlider() {
     if (featuredCars.length === 0) return;
 
@@ -83,6 +96,9 @@ function startHeroSlider() {
 
     // Si solo hay un auto destacado, no rotamos
     if (featuredCars.length === 1) return;
+
+    // Limpiar intervalo anterior si existe (evita aceleración si se llama varias veces)
+    if (heroInterval) clearInterval(heroInterval);
 
     // Cambiar cada 5 segundos
     heroInterval = setInterval(() => {
@@ -93,32 +109,32 @@ function startHeroSlider() {
 }
 
 function updateHero(car) {
-    if (!car) return;
+    if (!car || !heroContent) return;
 
     // Animación de salida (Fade Out)
-    // Asumimos que heroContent es el contenedor del texto
     heroContent.style.opacity = '0';
     
     setTimeout(() => {
         // 1. Actualizar Imagen de Fondo
         if(car.images && car.images.length > 0) {
-            heroBg.style.backgroundImage = `url('${car.images[0]}')`;
+            if(heroBg) heroBg.style.backgroundImage = `url('${car.images[0]}')`;
         }
         
         // 2. Inyectar HTML con los datos Y EL BOTÓN CONECTADO
-        // Nota: Usamos innerHTML para reescribir título, precio, descripción y botón a la vez
         heroContent.innerHTML = `
-            <h1 id="heroTitle" style="font-family: 'Playfair Display', serif; font-size: 3.5rem; margin-bottom: 10px;">
+            <h1 id="heroTitle" style="font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 10px; line-height: 1.2;">
                 ${car.make} ${car.model}
             </h1>
-            <p id="heroPrice" style="font-size: 2rem; color: var(--gold); margin-bottom: 20px;">
+            <p id="heroPrice" style="font-size: clamp(1.5rem, 3vw, 2rem); color: var(--gold); margin-bottom: 20px;">
                 $${Number(car.price).toLocaleString()}
             </p>
-            <p id="heroDesc" style="font-size: 1.1rem; color: #ccc; max-width: 600px; margin: 0 auto 30px auto;">
-                ${car.description ? car.description.substring(0, 100) + '...' : 'Experiencia de lujo.'}
+            <p id="heroDesc" style="font-size: 1.1rem; color: #ccc; max-width: 600px; margin: 0 auto 30px auto; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                ${car.description ? car.description : 'Experiencia de lujo.'}
             </p>
             
-            <button class="btn-primary" style="padding: 15px 30px; font-size: 1rem; cursor: pointer; background: var(--gold); border: none; font-weight: bold;" 
+            <button class="btn-primary" style="padding: 15px 30px; font-size: 1rem; cursor: pointer; background: var(--gold); color: black; border: none; font-weight: bold; border-radius: 4px; transition: transform 0.2s;" 
+                onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'"
                 onclick="showCarDetails('${car._id}')">
                 VER DETALLES
             </button>
@@ -130,37 +146,57 @@ function updateHero(car) {
     }, 500);
 }
 
-// 6. FILTRADO POR MARCA (LOGOS)
+// 4. FILTRADO POR MARCA (LOGOS)
 function filterByMake(make) {
-    const gridTitle = document.getElementById('gridTitle'); // Asegúrate de tener este ID en tu HTML (h2 del inventario)
+    const gridTitle = document.getElementById('gridTitle');
     
     // Si seleccionan "TODAS" o "all"
-    if (make === 'all') {
+    if (!make || make === 'all') {
         renderGrid(allCars);
         if(gridTitle) gridTitle.innerText = 'Inventario Completo';
         return;
     }
 
-    // Filtramos usando .filter()
-    // Convertimos a minúsculas para evitar errores (Ferrari vs ferrari)
-    const filtered = allCars.filter(car => car.make.toLowerCase() === make.toLowerCase());
+    // Filtramos
+    const filtered = allCars.filter(car => car.make && car.make.toLowerCase() === make.toLowerCase());
     
-    // Renderizamos los resultados
     renderGrid(filtered);
     
-    // Actualizamos el título para dar feedback al usuario
     if(gridTitle) gridTitle.innerText = `Colección ${make}`;
+    
+    // Scroll suave hacia el grid para ver resultados
+    if(grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Hacemos la función global si usas módulos
-window.filterByMake = filterByMake;
+// 5. FILTROS DEL MENÚ
+function filterCars(type) {
+    const gridTitle = document.getElementById('gridTitle');
+    
+    if (!type) {
+        renderGrid(allCars);
+        if(gridTitle) gridTitle.innerText = 'Inventario Completo';
+    } else {
+        const filtered = allCars.filter(car => car.type === type);
+        renderGrid(filtered);
+        if(gridTitle) gridTitle.innerText = `Categoría: ${type}`;
+    }
+    
+    // Cerrar menú móvil si estuviera abierto (lógica opcional)
+    // Scroll suave hacia el grid
+    if(grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-// 4. VENTANA MODAL (DETALLES) - Funciona para Grid y Carrusel
+// 6. VENTANA MODAL (DETALLES)
 async function showCarDetails(id) {
     try {
-        // Pedimos los detalles completos al servidor
-        const res = await fetch(`/api/cars/${id}`);
-        const car = await res.json();
+        // Buscamos primero en local para respuesta instantánea
+        let car = allCars.find(c => c._id === id);
+        
+        // Si no está (raro), o queremos datos frescos, pedimos a la API
+        if(!car) {
+            const res = await fetch(`/api/cars/${id}`);
+            car = await res.json();
+        }
 
         const modal = document.createElement('div');
         modal.style.cssText = `
@@ -179,42 +215,50 @@ async function showCarDetails(id) {
         }
 
         modal.innerHTML = `
-            <div style="background:#1c1c1e; width:95%; max-width:1000px; height:85vh; display:flex; border-radius:12px; border:1px solid #333; overflow:hidden; position:relative; box-shadow:0 0 50px rgba(0,0,0,0.8);">
+            <div class="modal-content" style="background:#1c1c1e; width:95%; max-width:1000px; max-height:90vh; display:flex; flex-direction: column; border-radius:12px; border:1px solid #333; overflow:hidden; position:relative; box-shadow:0 0 50px rgba(0,0,0,0.8);">
                 
-                <button onclick="this.closest('div').parentElement.remove()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:2rem; cursor:pointer; z-index:10; width:40px; height:40px; border-radius:50%; line-height:40px;">&times;</button>
+                <button onclick="this.closest('.modal-content').parentElement.remove()" style="position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.5); border:none; color:white; font-size:2rem; cursor:pointer; z-index:10; width:40px; height:40px; border-radius:50%; line-height:40px;">&times;</button>
                 
-                <div style="flex:1.5; background:#000; display:flex; align-items:center; justify-content:center;">
-                    <img id="mainModalImg" src="${car.images ? car.images[0] : ''}" style="width:100%; height:100%; object-fit:contain;">
-                </div>
-
-                <div style="flex:1; padding:40px; overflow-y:auto; color:white;">
-                    <small style="color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:bold;">${car.type}</small>
-                    <h2 style="font-family:'Playfair Display', serif; font-size:2.5rem; margin:10px 0;">${car.make} ${car.model}</h2>
-                    <h3 style="font-weight:300; font-size:2rem; color:#fff;">$${Number(car.price).toLocaleString()}</h3>
-                    
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:30px 0; border-top:1px solid #333; border-bottom:1px solid #333; padding:20px 0;">
-                        <div>
-                            <span style="display:block; color:#888; font-size:0.8rem;">AÑO</span>
-                            <span style="font-size:1.2rem;">${car.year}</span>
-                        </div>
-                        <div>
-                            <span style="display:block; color:#888; font-size:0.8rem;">ID REFERENCIA</span>
-                            <span style="font-size:1.2rem; font-family:monospace;">#${car._id.substring(car._id.length - 6).toUpperCase()}</span>
-                        </div>
+                <div class="modal-body" style="display: flex; flex-direction: row; height: 100%; overflow: hidden;">
+                    <div style="flex:1.5; background:#000; display:flex; align-items:center; justify-content:center; padding: 10px;">
+                        <img id="mainModalImg" src="${car.images ? car.images[0] : ''}" style="max-width:100%; max-height:100%; object-fit:contain;">
                     </div>
 
-                    <p style="line-height:1.8; color:#ccc; margin-bottom:30px;">${car.description || 'Sin descripción disponible.'}</p>
-                    
-                    <h4 style="color:#888; font-size:0.8rem; margin-bottom:10px;">GALERÍA</h4>
-                    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:30px;">
-                        ${thumbnails}
-                    </div>
+                    <div style="flex:1; padding:30px; overflow-y:auto; color:white; border-left: 1px solid #333;">
+                        <small style="color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:bold;">${car.type}</small>
+                        <h2 style="font-family:'Playfair Display', serif; font-size:2rem; margin:10px 0;">${car.make} ${car.model}</h2>
+                        <h3 style="font-weight:300; font-size:1.8rem; color:#fff;">$${Number(car.price).toLocaleString()}</h3>
+                        
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin:20px 0; border-top:1px solid #333; border-bottom:1px solid #333; padding:15px 0;">
+                            <div>
+                                <span style="display:block; color:#888; font-size:0.8rem;">AÑO</span>
+                                <span style="font-size:1.1rem;">${car.year}</span>
+                            </div>
+                            <div>
+                                <span style="display:block; color:#888; font-size:0.8rem;">ID REFERENCIA</span>
+                                <span style="font-size:1.1rem; font-family:monospace;">#${car._id.substring(car._id.length - 6).toUpperCase()}</span>
+                            </div>
+                        </div>
 
-                    <button style="width:100%; background:var(--gold); color:black; padding:18px; border:none; font-weight:bold; font-size:1rem; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.3s;" onclick="alert('Contactando ventas...')">
-                        Solicitar Información
-                    </button>
+                        <p style="line-height:1.6; color:#ccc; margin-bottom:20px; font-size: 0.95rem;">${car.description || 'Sin descripción disponible.'}</p>
+                        
+                        <h4 style="color:#888; font-size:0.8rem; margin-bottom:10px;">GALERÍA</h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:30px;">
+                            ${thumbnails}
+                        </div>
+
+                        <button style="width:100%; background:var(--gold); color:black; padding:15px; border:none; font-weight:bold; font-size:1rem; cursor:pointer; text-transform:uppercase; letter-spacing:1px; transition:0.3s; border-radius: 4px;" onclick="alert('Gracias por su interés. Un asesor le contactará pronto.')">
+                            Solicitar Información
+                        </button>
+                    </div>
                 </div>
             </div>
+            <style>
+                @media (max-width: 768px) {
+                    .modal-body { flex-direction: column !important; overflow-y: auto !important; }
+                    .modal-body > div { border-left: none !important; border-top: 1px solid #333; }
+                }
+            </style>
         `;
 
         document.body.appendChild(modal);
@@ -229,15 +273,7 @@ async function showCarDetails(id) {
     }
 }
 
-// 5. FILTROS DEL MENÚ (Opcional, si tienes botones de filtro en HTML)
-function filterCars(type) {
-    const titleElement = document.getElementById('gridTitle');
-    if(titleElement) titleElement.innerText = type ? `${type} Inventory` : 'Inventario Completo';
-    
-    if (!type) {
-        renderGrid(allCars);
-    } else {
-        const filtered = allCars.filter(car => car.type === type);
-        renderGrid(filtered);
-    }
-}
+// 7. EXPORTAR FUNCIONES AL ÁMBITO GLOBAL (Para que funcionen los onclick del HTML)
+window.filterByMake = filterByMake;
+window.filterCars = filterCars;
+window.showCarDetails = showCarDetails;

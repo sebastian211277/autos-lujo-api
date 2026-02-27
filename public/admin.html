@@ -4,80 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | Luxury Garage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --bg-dark: #121213; --panel-gray: #1c1c1e; --gold: #d4af37; --text-light: #f5f5f7; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-light); margin: 0; padding: 20px; }
-        .dashboard { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
-        .panel { background: var(--panel-gray); padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        h2 { color: var(--gold); margin-top: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; }
-        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; }
-        input:focus { border-color: var(--gold); outline: none; }
         
-        /* ESTO ES LO QUE FALTABA O NO SE VEÍA */
+        /* Layout principal */
+        .dashboard { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 2fr; gap: 30px; }
+        
+        /* Paneles */
+        .panel { background: var(--panel-gray); padding: 25px; border-radius: 12px; border: 1px solid #333; height: fit-content; }
+        
+        h2 { color: var(--gold); margin-top: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; margin-bottom: 20px;}
+        
+        /* Estilos del Formulario */
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { border-color: var(--gold); outline: none; }
+        
         .checkbox-group { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #2c2c2e; padding: 15px; border-radius: 6px; border: 1px solid #444; }
         .checkbox-group input { width: 20px; height: 20px; margin: 0; cursor: pointer; accent-color: var(--gold); }
         .checkbox-group label { cursor: pointer; font-weight: bold; color: var(--gold); }
         
-        .btn-save { width: 100%; background: var(--gold); color: black; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        .btn-save:hover { background: #b5952f; }
-        .inventory-list { display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
-        .inventory-item { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 10px; border-radius: 6px; border-left: 3px solid #333; }
-        .inventory-item.featured { border-left: 4px solid var(--gold); background: #1a1a1a; }
-        .item-info { display: flex; gap: 15px; align-items: center; }
-        .item-thumb { width: 60px; height: 40px; object-fit: cover; border-radius: 4px; }
-        .btn-delete { background: #ff3b30; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        /* Botones de Acción */
+        .form-actions { display: flex; gap: 10px; margin-top: 10px; }
+        
+        #btnSubmit { flex: 1; background: var(--gold); color: black; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; transition: 0.3s; border-radius: 4px; }
+        #btnSubmit:hover { background: #b5952f; }
+        
+        #btnCancel { flex: 1; background: #e74c3c; color: white; font-weight: bold; border: none; padding: 15px; cursor: pointer; text-transform: uppercase; transition: 0.3s; border-radius: 4px; }
+        #btnCancel:hover { background: #c0392b; }
+
+        /* Estilos de la Tabla (Nuevo para coincidir con admin.js) */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #333; }
+        th { color: var(--gold); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        tr:hover { background: #2c2c2e; }
+        
+        /* Responsivo */
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <header style="margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px;">
         <h1>Luxury Garage <span style="color:var(--gold)">Manager</span></h1>
+        <a href="/" style="color: #666; text-decoration: none;">&larr; Volver al Sitio Web</a>
     </header>
 
     <div class="dashboard">
+        
         <div class="panel">
-            <h2>Agregar Nuevo Vehículo</h2>
+            <h2>Gestión de Vehículo</h2>
             <form id="carForm">
-                <input type="text" id="make" placeholder="Marca (Ej: Porsche)" required>
-                <input type="text" id="model" placeholder="Modelo (Ej: 911 GT3)" required>
+                <label style="font-size: 0.8rem; color: #888;">Marca</label>
+                <input type="text" id="make" name="make" placeholder="Ej: Porsche" required>
+                
+                <label style="font-size: 0.8rem; color: #888;">Modelo</label>
+                <input type="text" id="model" name="model" placeholder="Ej: 911 GT3" required>
+                
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input type="number" id="year" placeholder="Año" required>
-                    <input type="number" id="price" placeholder="Precio (USD)" required>
+                    <div>
+                        <label style="font-size: 0.8rem; color: #888;">Año</label>
+                        <input type="number" id="year" name="year" placeholder="2024" required>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: #888;">Precio (USD)</label>
+                        <input type="number" id="price" name="price" placeholder="250000" required>
+                    </div>
                 </div>
-                <select id="type">
+
+                <label style="font-size: 0.8rem; color: #888;">Categoría</label>
+                <select id="type" name="type">
                     <option value="Cars">Cars (Deportivos/Sedan)</option>
                     <option value="SUV">SUV</option>
                     <option value="Pickups">Pickups</option>
                     <option value="Hybrid & Electric">Hybrid & Electric</option>
                 </select>
-                <textarea id="description" rows="4" placeholder="Descripción detallada..."></textarea>
+
+                <label style="font-size: 0.8rem; color: #888;">Descripción</label>
+                <textarea id="description" name="description" rows="4" placeholder="Detalles del motor, interior, estado..."></textarea>
 
                 <div class="checkbox-group">
-                    <input type="checkbox" id="isFeatured">
-                    <label for="isFeatured">🏆 Destacar en Portada (Carrusel)</label>
+                    <input type="checkbox" id="isFeatured" name="isFeatured">
+                    <label for="isFeatured">🏆 Destacar en Portada</label>
                 </div>
 
-                <label style="display:block; margin-bottom:5px; color:#aaa;">Fotografías (La primera será la del carrusel)</label>
-                <input type="file" id="images" multiple accept="image/*" required>
+                <label style="display:block; margin-bottom:5px; color:#aaa;">Fotografías</label>
+                <input type="file" id="images" name="images" multiple accept="image/*">
+                <small style="display:block; color:#666; margin-bottom:15px; font-size: 0.75rem;">
+                    * Al crear nuevo: Sube fotos.<br>
+                    * Al editar: Déjalo vacío para mantener las actuales.
+                </small>
 
-                <button type="submit" class="btn-save">Guardar en Inventario</button>
+                <div class="form-actions">
+                    <button type="submit" id="btnSubmit">Guardar Auto</button>
+                    <button type="button" id="btnCancel" style="display: none;" onclick="resetForm()">Cancelar</button>
+                </div>
             </form>
-        </div>
-
-        <div class="form-actions">
-    <button type="submit" id="btnSubmit">Guardar Auto</button>
-    
-    <button type="button" id="btnCancel" style="display: none; background: #666; margin-left: 10px;" onclick="resetForm()">
-        Cancelar Edición
-    </button>
         </div>
 
         <div class="panel">
             <h2>Inventario Actual</h2>
-            <div id="inventoryList" class="inventory-list">
-                <p style="color:#666">Cargando inventario...</p>
-            </div>
+            <table id="carsTable">
+                <thead>
+                    <tr>
+                        <th width="80">Foto</th>
+                        <th>Vehículo</th>
+                        <th>Año</th>
+                        <th>Precio</th>
+                        <th style="text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
         </div>
     </div>
-    <script src="js/admin.js"></script>
+
+    <script src="admin.js"></script>
 </body>
 </html>

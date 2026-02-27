@@ -3,20 +3,28 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// --- CONFIGURACIÓN DE MULTER (Subida de Imágenes) ---
+// --- 1. CONFIGURACIÓN DE MULTER (MEJORADA) ---
+// Usamos rutas dinámicas para que funcione en cualquier carpeta o computadora
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Usamos una ruta absoluta directa para evitar confusiones de carpetas
-        const dest = '/home/shyrio/autos-lujo-api/public/uploads/';
+        // __dirname es la carpeta actual (controllers)
+        // subimos dos niveles (../..) para llegar a la raíz y entramos a public/uploads
+        const dest = path.join(__dirname, '../../public/uploads');
+        
+        // Aseguramos que la carpeta exista, si no, la crea (opcional, buena práctica)
+        if (!fs.existsSync(dest)){
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        
         cb(null, dest);
     },
     filename: function (req, file, cb) {
+        // Nombre único para evitar sobrescribir fotos con el mismo nombre
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, 'auto-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// Filtro para aceptar solo imágenes
 const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -27,30 +35,42 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB por foto
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: fileFilter
 });
 
-// --- FUNCIONES DEL CONTROLADOR ---
+// Exportamos el middleware para usarlo en carRoutes.js
+exports.uploadMiddleware = upload.array('images', 10);
 
-// 1. OBTENER TODOS LOS AUTOS (Con filtros)
+
+// --- 2. FUNCIONES DEL CONTROLADOR ---
+
+// A. OBTENER TODOS (CRÍTICO: FORMATO DATA)
 exports.getCars = async (req, res) => {
     try {
         const { type, featured } = req.query;
         let query = {};
 
-        if (type) query.type = type;
-        // IMPORTANTE: Asegúrate de que esta comparación sea segura
+        if (type && type !== 'all') query.type = type;
         if (featured === 'true') query.isFeatured = true;
 
         const cars = await Car.find(query).sort({ createdAt: -1 });
-res.json({ data: cars }); // Verifica que envíes un objeto con 'data'
+
+        // ¡ESTO ES LO QUE ARREGLA TU FRONTEND!
+        // Enviamos un objeto con la propiedad 'data'
+        res.json({
+            success: true,
+            count: cars.length,
+            data: cars 
+        });
+
     } catch (err) {
-        console.error("❌ Error en getCars:", err);
-        res.status(500).json({ msg: 'Error al obtener los autos' });
+        console.error("❌ Error en getCars:", err.message);
+        res.status(500).json({ msg: 'Error del Servidor' });
     }
 };
 
-// 2. OBTENER UN AUTO POR ID
+// B. OBTENER UNO POR ID
 exports.getCarById = async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
@@ -63,12 +83,11 @@ exports.getCarById = async (req, res) => {
     }
 };
 
-// 3. CREAR UN AUTO (Con fotos)
+// C. CREAR AUTO
 exports.createCar = async (req, res) => {
-    // Multer ya procesó las fotos antes de llegar aquí
     try {
-        // Las rutas de las imágenes que guardó Multer
-        const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+        // Validación: Si no hay archivos, inicializamos array vacío para evitar error
+        const imagePaths = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
 
         const newCar = new Car({
             make: req.body.make,
@@ -77,42 +96,52 @@ exports.createCar = async (req, res) => {
             price: req.body.price,
             type: req.body.type,
             description: req.body.description,
-            images: imagePaths, // Guardamos el array de rutas
-            isFeatured: req.body.isFeatured === 'true' // Convertir string a boolean
+            images: imagePaths,
+            isFeatured: req.body.isFeatured === 'true' // Convertir string "true" a boolean true
         });
 
         const car = await newCar.save();
         res.json(car);
     } catch (err) {
-        console.error(err);
+        console.error("Error al crear:", err);
         res.status(500).send('Error al guardar el auto');
     }
 };
 
-// 4. ACTUALIZAR AUTO
+// D. ACTUALIZAR AUTO
 exports.updateCar = async (req, res) => {
     try {
         let car = await Car.findById(req.params.id);
         if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
 
-        // Datos a actualizar
+        // Construimos el objeto de actualización dinámicamente
         const { make, model, year, price, type, description, isFeatured } = req.body;
         
-        // Si subieron fotos nuevas, las agregamos al array existente
-        let newImages = car.images;
-        if (req.files && req.files.length > 0) {
-            const uploadedPaths = req.files.map(file => `/uploads/${file.filename}`);
-            newImages = newImages.concat(uploadedPaths);
+        let carFields = {};
+        if (make) carFields.make = make;
+        if (model) carFields.model = model;
+        if (year) carFields.year = year;
+        if (price) carFields.price = price;
+        if (type) carFields.type = type;
+        if (description) carFields.description = description;
+        // Solo actualizamos isFeatured si viene en el request
+        if (typeof isFeatured !== 'undefined') {
+            carFields.isFeatured = isFeatured === 'true';
         }
 
-        // Objeto con los campos actualizados
-        const carFields = {
-            make, model, year, price, type, description,
-            isFeatured: isFeatured === 'true',
-            images: newImages
-        };
+        // Manejo de Imágenes: Si suben nuevas, las agregamos a las existentes
+        if (req.files && req.files.length > 0) {
+            const uploadedPaths = req.files.map(file => `/uploads/${file.filename}`);
+            carFields.images = car.images.concat(uploadedPaths);
+        }
 
-        car = await Car.findByIdAndUpdate(req.params.id, { $set: carFields }, { new: true });
+        // Actualizamos y devolvemos el nuevo documento
+        car = await Car.findByIdAndUpdate(
+            req.params.id, 
+            { $set: carFields }, 
+            { new: true }
+        );
+        
         res.json(car);
     } catch (err) {
         console.error(err);
@@ -120,14 +149,22 @@ exports.updateCar = async (req, res) => {
     }
 };
 
-// 5. BORRAR AUTO (Y sus fotos)
+// E. ELIMINAR AUTO
 exports.deleteCar = async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
         if (!car) return res.status(404).json({ msg: 'Auto no encontrado' });
 
-        // (Opcional) Aquí podríamos borrar los archivos físicos de 'uploads' para ahorrar espacio
-        // car.images.forEach(imgPath => { ... borrar con fs.unlink ... })
+        // OPCIONAL: Borrar archivos físicos del disco para no llenar la memoria SD
+        if (car.images && car.images.length > 0) {
+            car.images.forEach(imgPath => {
+                // imgPath viene como "/uploads/foto.jpg", hay que convertirlo a ruta física
+                const filePath = path.join(__dirname, '../../public', imgPath);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath); // Borra el archivo
+                }
+            });
+        }
 
         await car.deleteOne();
         res.json({ msg: 'Auto eliminado correctamente' });
@@ -136,6 +173,3 @@ exports.deleteCar = async (req, res) => {
         res.status(500).send('Error al eliminar');
     }
 };
-
-// Exportamos el middleware de subida para usarlo en las rutas
-exports.uploadMiddleware = upload.array('images', 10); // Acepta hasta 10 fotos campo 'images'
